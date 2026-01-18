@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Add Sales Invoice{% endblock %}
+
+{% block layout %}
+<div class="card shadow-sm">
+
+  <!-- HEADER -->
+  <div class="card-header text-center">
+    <h4 class="fw-bold mb-0">TAX INVOICE</h4>
+    <small class="text-muted">Sales Invoice</small>
+  </div>
+
+  <div class="card-body">
+
+    <!-- SELLER / BUYER -->
+    <div class="row border p-2 small mb-3">
+
+      <div class="col-md-6">
+        <div class="fw-bold">Seller</div>
+        <div>{{ company.name }}</div>
+        <div>{{ company.address }}</div>
+        <div>GSTIN: {{ company.gstin }}</div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="d-flex justify-content-between">
+          <div class="fw-bold">Buyer</div>
+          <button class="btn btn-sm btn-outline-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#addCustomerModal">
+            + New Customer
+          </button>
+        </div>
+
+        <select id="customer" class="form-control form-control-sm mt-1">
+          <option value="">Select Customer</option>
+          {% for c in customers %}
+            <option value="{{ c.id }}"
+              data-gstin="{{ c.gstin }}"
+              data-address="{{ c.address }}">
+              {{ c.name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <div id="customer_info" class="small text-muted mt-1"></div>
+      </div>
+    </div>
+
+    <!-- INVOICE META -->
+    <div class="row g-2 mb-3 small">
+      <div class="col-md-3">
+        <label>Invoice No</label>
+        <input id="invoice_number" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label>Date</label>
+        <input type="date" id="invoice_date" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label>GST Type</label>
+        <select id="same_state" class="form-control form-control-sm">
+          <option value="true">CGST + SGST</option>
+          <option value="false">IGST</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label>Payment Terms</label>
+        <input class="form-control form-control-sm" value="30 Days">
+      </div>
+    </div>
+
+    <!-- ITEMS -->
+    <h6 class="fw-bold">Item Details</h6>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm text-center align-middle" id="items_table">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>HSN</th>
+            <th>Qty (NOS)</th>
+            <th>Rate</th>
+            <th>GST %</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <button class="btn btn-secondary btn-sm" onclick="addRow()">+ Add Item</button>
+
+    <!-- TOTALS -->
+    <hr>
+    <div class="row small">
+      <div class="col-md-6"></div>
+      <div class="col-md-6">
+        <table class="table table-sm table-borderless">
+          <tr>
+            <td>Basic Amount</td>
+            <td class="text-end">₹ <span id="base_amount">0.00</span></td>
+          </tr>
+          <tr>
+            <td>GST</td>
+            <td class="text-end">₹ <span id="gst_amount">0.00</span></td>
+          </tr>
+          <tr id="cgst_row">
+            <td>CGST</td>
+            <td class="text-end">₹ <span id="cgst_amount">0.00</span></td>
+          </tr>
+          <tr id="sgst_row">
+            <td>SGST</td>
+            <td class="text-end">₹ <span id="sgst_amount">0.00</span></td>
+          </tr>
+          <tr id="igst_row" class="d-none">
+            <td>IGST</td>
+            <td class="text-end">₹ <span id="igst_amount">0.00</span></td>
+          </tr>
+          <tr class="fw-bold border-top">
+            <td>Grand Total</td>
+            <td class="text-end">₹ <span id="total_amount">0.00</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="text-end mt-3">
+      <button class="btn btn-primary" onclick="submitInvoice()">Save Invoice</button>
+      <a href="/production/sales-invoice-list" class="btn btn-danger">Cancel</a>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Add New Customer</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-2">
+          <label>Name</label>
+          <input id="cust_name" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>GSTIN</label>
+          <input id="cust_gstin" class="form-control">
+        </div>
+
+        <div class="mb-2">
+          <label>Address</label>
+          <textarea id="cust_address" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label>Contact</label>
+          <input id="cust_contact" class="form-control">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{{block.super}}
+<script>
+$('#customer').on('change', function () {
+    let opt = $(this).find('option:selected');
+
+    let gstin = opt.data('gstin') || '';
+    let address = opt.data('address') || '';
+
+    if (gstin || address) {
+        $('#customer_info').html(`
+            <div><b>GSTIN:</b> ${gstin}</div>
+            <div><b>Address:</b> ${address}</div>
+        `);
+    } else {
+        $('#customer_info').html('');
+    }
+});
+function saveCustomer(){
+  let fd = new FormData();
+  fd.append('csrfmiddlewaretoken','{{ csrf_token }}');
+  fd.append('name',$('#cust_name').val());
+  fd.append('gstin',$('#cust_gstin').val());
+  fd.append('address',$('#cust_address').val());
+  fd.append('contact_number',$('#cust_contact').val());
+
+  $.ajax({
+    url: hosturl + "/api/User/add_new_customer",
+    type: "POST",
+    data: fd,
+    processData:false,
+    contentType:false,
+    beforeSend:()=>swal({text:"Saving customer...",buttons:false}),
+    success:function(res){
+      if(res.response.n===1){
+        let c = res.data;
+
+        $('#customer').append(`
+          <option value="${c.id}" selected
+            data-gstin="${c.gstin}"
+            data-address="${c.address}">
+            ${c.name}
+          </option>
+        `);
+
+        $('#addCustomerModal').modal('hide');
+        swal("Customer added");
+      }else{
+        swal(res.response.msg);
+      }
+    }
+  });
+}
+
+
+function addRow(){
+  let row = `
+    <tr>
+      <td class="sr"></td>
+      <td>
+        <select class="form-control form-control-sm product">
+          {% for p in products %}
+            <option value="{{ p.id }}" data-hsn="{{ p.hsn_code }}">
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </td>
+      <td class="hsn"></td>
+      <td><input type="number" class="form-control form-control-sm qty"></td>
+      <td><input type="number" class="form-control form-control-sm rate"></td>
+      <td><input type="number" class="form-control form-control-sm gst" value="18"></td>
+      <td class="amount">0.00</td>
+      <td>
+        <button class="btn btn-danger btn-sm"
+          onclick="$(this).closest('tr').remove(); calculateBill()">×</button>
+      </td>
+    </tr>`;
+  $('#items_table tbody').append(row);
+  refreshMeta();
+}
+
+function refreshMeta(){
+  $('#items_table tbody tr').each(function(i){
+    $(this).find('.sr').text(i+1);
+    let opt = $(this).find('.product option:selected');
+    $(this).find('.hsn').text(opt.data('hsn') || '');
+  });
+}
+
+$(document).on('change','.product',refreshMeta);
+$(document).on('keyup change','.qty,.rate,.gst,#same_state',calculateBill);
+
+function calculateBill(){
+  let base=0, gst=0;
+
+  $('#items_table tbody tr').each(function(){
+    let q = parseFloat($(this).find('.qty').val()) || 0;
+    let r = parseFloat($(this).find('.rate').val()) || 0;
+    let g = parseFloat($(this).find('.gst').val()) || 0;
+
+    let b = q * r;
+    let gAmt = b * g / 100;
+
+    $(this).find('.amount').text((b+gAmt).toFixed(2));
+
+    base += b;
+    gst += gAmt;
+  });
+
+  $('#base_amount').text(base.toFixed(2));
+  $('#gst_amount').text(gst.toFixed(2));
+  $('#total_amount').text((base+gst).toFixed(2));
+
+  if($('#same_state').val()==="true"){
+    $('#cgst_row,#sgst_row').show();
+    $('#igst_row').addClass('d-none');
+    $('#cgst_amount').text((gst/2).toFixed(2));
+    $('#sgst_amount').text((gst/2).toFixed(2));
+  }else{
+    $('#cgst_row,#sgst_row').hide();
+    $('#igst_row').removeClass('d-none');
+    $('#igst_amount').text(gst.toFixed(2));
+  }
+}
+
+function submitInvoice(){
+  let items=[];
+
+  $('#items_table tbody tr').each(function(){
+    let opt = $(this).find('.product option:selected');
+
+    items.push({
+      product: $(this).find('.product').val(),
+      hsn_code: opt.data('hsn'),   // ✅ ADD THIS
+      quantity: $(this).find('.qty').val(),
+      rate: $(this).find('.rate').val(),
+      gst_percentage: $(this).find('.gst').val()
+    });
+  });
+
+  if(items.length===0){
+    swal("Add at least one product");
+    return;
+  }
+
+  let fd = new FormData();
+  fd.append('csrfmiddlewaretoken','{{ csrf_token }}');
+  fd.append('invoice_number',$('#invoice_number').val());
+  fd.append('invoice_date',$('#invoice_date').val());
+  fd.append('customer',$('#customer').val());
+  fd.append('same_state',$('#same_state').val());
+  fd.append('items', JSON.stringify(items));
+
+  $.ajax({
+    url:"/api/Sales/create_sales_invoice",
+    type:"POST",
+    data:fd,
+    processData:false,
+    contentType:false,
+    beforeSend:()=>swal({text:"Saving...",buttons:false}),
+    success:function(res){
+      if(res.response.n===1){
+        swal(res.response.msg).then(()=>{
+          window.location.href="/sales/sales-invoice-list";
+        });
+      }else{
+        swal(res.response.msg);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

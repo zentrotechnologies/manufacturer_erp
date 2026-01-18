@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}View Sales Invoice{% endblock %}
+
+{% block layout %}
+<div class="card shadow-sm" id="printArea">
+
+  <!-- HEADER -->
+  <div class="card-header text-center">
+    <h4 class="fw-bold mb-0">TAX INVOICE</h4>
+    <small class="text-muted">Sales Invoice</small>
+  </div>
+
+  <div class="card-body small">
+
+    <!-- SELLER / BUYER -->
+    <div class="row border p-2 mb-3">
+      <div class="col-md-6">
+        <div class="fw-bold">Seller</div>
+        <div>{{ company.name }}</div>
+        <div>{{ company.address }}</div>
+        <div>GSTIN: {{ company.gstin }}</div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="fw-bold">Buyer</div>
+        <div>{{ invoice.customer.name }}</div>
+        <div>{{ invoice.customer.address }}</div>
+        <div>GSTIN: {{ invoice.customer.gstin }}</div>
+        <div>Contact: {{ invoice.customer.contact_number }}</div>
+      </div>
+    </div>
+
+    <!-- INVOICE META -->
+    <div class="row mb-3">
+      <div class="col-md-3"><b>Invoice No:</b> {{ invoice.invoice_number }}</div>
+      <div class="col-md-3"><b>Date:</b> {{ invoice.invoice_date }}</div>
+      <div class="col-md-3">
+        <b>GST Type:</b>
+        {% if invoice.same_state %} CGST + SGST {% else %} IGST {% endif %}
+      </div>
+      <div class="col-md-3"><b>Status:</b> {{ invoice.payment_status }}</div>
+    </div>
+
+    <!-- ITEMS -->
+    <table class="table table-bordered table-sm text-center align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th class="text-start">Product</th>
+          <th>HSN</th>
+          <th>Qty</th>
+          <th>Rate</th>
+          <th>GST %</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in items %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="text-start">{{ i.product_name }}</td>
+          <td>{{ i.hsn_code }}</td>
+          <td>{{ i.quantity }}</td>
+          <td>₹ {{ i.rate }}</td>
+          <td>{{ i.gst_percentage }}%</td>
+          <td class="fw-bold">₹ {{ i.total_amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <div class="row mt-3">
+      <div class="col-md-6"></div>
+      <div class="col-md-6">
+        <table class="table table-sm table-borderless">
+          <tr>
+            <td>Basic Amount</td>
+            <td class="text-end">₹ {{ invoice.base_amount }}</td>
+          </tr>
+          <tr>
+            <td>GST</td>
+            <td class="text-end">₹ {{ invoice.gst_amount }}</td>
+          </tr>
+
+          {% if invoice.same_state %}
+          <tr>
+            <td>CGST</td>
+            <td class="text-end">₹ {{ invoice.gst_amount  }}</td>
+          </tr>
+          <tr>
+            <td>SGST</td>
+            <td class="text-end">₹ {{ invoice.gst_amount }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td>IGST</td>
+            <td class="text-end">₹ {{ invoice.gst_amount }}</td>
+          </tr>
+          {% endif %}
+
+          <tr class="fw-bold border-top">
+            <td>Grand Total</td>
+            <td class="text-end">₹ {{ invoice.total_amount }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="text-end mt-3">
+  <button class="btn btn-secondary" onclick="window.print()">🖨 Print</button>
+  <a href="/production/sales-invoice-list" class="btn btn-danger">Back</a>
+</div>
+
+{% endblock %}

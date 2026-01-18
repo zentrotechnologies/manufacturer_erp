@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Add Product{% endblock %}
+
+{% block layout %}
+<div class="card">
+  <div class="card-header"><h5>Add Product</h5></div>
+  <div class="card-body">
+    <form>
+      {% csrf_token %}
+      <div class="row">
+
+        <div class="col-4">
+          <input id="part_code" class="form-control" placeholder="Part Code">
+        </div>
+        <div class="col-4">
+          <input id="name" class="form-control" placeholder="Product Name">
+        </div>
+        <div class="col-4">
+          <select id="mould" class="form-control">
+            {% for m in moulds %}
+              <option value="{{m.id}}">{{m.mould_code}}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-4 mt-3">
+          <input id="price" class="form-control" placeholder="Price">
+        </div>
+        <div class="col-4 mt-3">
+          <input id="gst" class="form-control" placeholder="GST %">
+        </div>
+
+      </div>
+
+      <hr>
+      <h6>Raw Material Configuration</h6>
+
+      <table class="table" id="bom_table">
+        <thead>
+          <tr>
+            <th>Raw Material</th>
+            <th>Quantity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+<br>
+      <button type="button" class="btn btn-secondary" onclick="addRow()">Add Row</button>
+
+      <br><br>
+      <button type="button" class="btn btn-primary" onclick="submitForm()">Submit</button>
+    </form>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+<script>
+function addRow() {
+  let row = `
+    <tr>
+      <td>
+        <select class="form-control raw_material">
+          {% for r in raw_materials %}
+            <option value="{{r.id}}">{{r.name}}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td><input class="form-control qty"></td>
+      <td><button class="btn btn-danger" onclick="$(this).closest('tr').remove()">X</button></td>
+    </tr>`;
+  $('#bom_table tbody').append(row);
+}
+
+function submitForm() {
+  let raw_materials = [];
+  $('#bom_table tbody tr').each(function () {
+    raw_materials.push({
+      raw_material: $(this).find('.raw_material').val(),
+      quantity: $(this).find('.qty').val()
+    });
+  });
+
+  let data = {
+    part_code: $('#part_code').val(),
+    name: $('#name').val(),
+    mould: $('#mould').val(),
+    price_per_unit: $('#price').val(),
+    gst_percentage: $('#gst').val(),
+    raw_materials: raw_materials
+  };
+
+  $.ajax({
+    url: hosturl + "/masters/add-product",
+    type: "POST",
+    data: {
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+      ...data,
+      raw_materials: JSON.stringify(raw_materials)
+    },
+    success: res => swal(res.response.msg).then(() =>
+      window.location.href = "/masters/product"
+    )
+  });
+}
+</script>
+{% endblock page_js %}

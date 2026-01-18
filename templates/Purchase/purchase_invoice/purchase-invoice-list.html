@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Purchase Invoices{% endblock %}
+
+{% block layout %}
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="card-header">Purchase Invoices</h5>
+
+    <div class="d-flex">
+      <input id="search" class="form-control me-3" placeholder="Search..." onkeyup="Pagination()">
+      <a class="btn btn-primary" href="/purchase/add-purchase-invoice">Add Invoice</a>
+    </div>
+  </div>
+
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Invoice No</th>
+        <th>Vendor</th>
+        <th>Date</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="invoice_table"></tbody>
+  </table>
+
+  <div class="d-flex justify-content-end p-3">
+    <ul id="pagination-demo" class="pagination-sm"></ul>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{{block.super}}
+<script>
+$(document).ready(()=>Pagination());
+
+function Pagination(){
+  $('#pagination-demo').html('');
+  loadData(1);
+}
+
+function loadData(p){
+  let fd = new FormData();
+  fd.append('p', p);
+  fd.append('searchtext', $('#search').val());
+  fd.append('csrfmiddlewaretoken', '{{csrf_token}}');
+
+  $.ajax({
+    url: hosturl + "/api/Purchase/purchase_invoice_list_pagination_api",
+    headers: {"Authorization":"Bearer {{token}}"},
+    type: "POST",
+    data: fd,
+    processData:false,
+    contentType:false,
+    success: function(res){
+      let html='';
+      let counter = ((p-1)*10)+1;
+
+      $.each(res.results,function(i,o){
+        html+=`
+          <tr>
+            <td>${counter++}</td>
+            <td>${o.invoice_number}</td>
+            <td>${o.vendor_name}</td>
+            <td>${o.invoice_date}</td>
+            <td>${o.total_amount}</td>
+            <td>${o.payment_status}</td>
+            <td>
+              <a class="btn btn-sm btn-info"
+                 href="/purchase/view-purchase-invoice/${o.id}">
+                 View
+              </a>
+            </td>
+          </tr>`;
+      });
+
+      $('#invoice_table').html(html);
+    }
+  });
+}
+</script>
+{% endblock %}

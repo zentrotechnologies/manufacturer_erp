@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Daily Production Report{% endblock %}
+
+{% block layout %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <h5>Daily Production Report</h5>
+        <div class="d-flex">
+            <div class="mx-1">
+            <input type="date" id="report_date" class="form-control w-100" >
+
+            </div>
+            <div class="mx-1">
+                <button class="btn btn-primary mb-3" onclick="loadReport()">Generate</button>
+            </div>
+            <div class="mx-1">
+                 <button class="btn btn-success mb-3" onclick="exportExcel()">
+                Export to Excel
+            </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        <div id="report_container"></div>
+    </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{{block.super}}
+<script>
+
+
+
+
+    function exportExcel() {
+        let date = $('#report_date').val();
+
+        if (!date) {
+            swal("Please select a date first");
+            return;
+        }
+
+        window.location.href =
+            hosturl +
+            "/api/Production/export_daily_production_report_excel?date=" +
+            date;
+    }
+
+    function loadReport() {
+        let date = $('#report_date').val();
+
+        if (!date) {
+            swal("Please select a date first");
+            return;
+        }
+        let fd = new FormData();
+        fd.append('date', $('#report_date').val());
+        fd.append('csrfmiddlewaretoken', '{{csrf_token}}');
+
+        $.ajax({
+            url: hosturl + "/api/Production/daily_production_report_api",
+            headers: { "Authorization": "Bearer {{token}}" },
+            type: "POST",
+            data: fd,
+            processData: false,
+            contentType: false,
+
+            beforeSend: () => swal({ text: "Loading...", buttons: false }),
+
+            success: function (res) {
+                swal.close();
+                let html = '';
+                if (res.response.n == 1) {
+
+
+                    res.data.forEach(r => {
+                        html += `
+          <div class="border p-3 mb-3">
+            <b>${r.product}</b> | Machine: ${r.machine} | Shift: ${r.shift}<br>
+            Produced: ${r.produced_qty}, Rejected: ${r.rejected_qty},
+            Net: ${r.net_qty}<br>
+            Cost / Piece: ₹${r.cost_per_piece}
+            <table class="table table-sm mt-2">
+              <thead>
+                <tr>
+                  <th>Raw Material</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${r.materials.map(m => `
+                  <tr>
+                    <td>${m.raw_material}</td>
+                    <td>${m.qty}</td>
+                    <td>${m.rate}</td>
+                    <td>${m.value}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+                    });
+
+                    $('#report_container').html(html);
+                } else {
+                    swal(res.response.msg);
+                }
+            }
+        });
+    }
+
+  document.getElementById("report_date").value =    new Date().toISOString().split('T')[0];
+    loadReport()
+
+</script>
+{% endblock %}

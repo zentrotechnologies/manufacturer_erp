@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to ERP | Registration Successful</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            line-height: 1.6;
+            color: #444;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background: linear-gradient(135deg, #19709b 0%, #6ecafc 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        .logo {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+        .content {
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .highlight-box {
+            background: #f0f7ff;
+            border-left: 4px solid #19709b;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 6px;
+        }
+        .credentials-box {
+            background: #fff8e6;
+            border: 1px solid #ffe9b5;
+            border-left: 5px solid #ffb300;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .credentials-box h3 {
+            margin-top: 0;
+            color: #b87f00;
+            font-weight: 600;
+        }
+        .credentials {
+            font-family: monospace;
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px 15px;
+            line-height: 1.8;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .credentials strong {
+            color: #333;
+        }
+        .footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #19709b 0%, #6ecafc 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 15px 0;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://mozilourislandguide.com/static/assets/img/logo/erp_logo.png" alt="ERP Logo" class="logo">
+            <h1 style="color: white;">Welcome to ERP!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hi {{ data.username|default:"there" }},</p>
+
+            <p>🎉 Congratulations! Your registration to <strong>ERP – Our Island Guide App</strong> has been successfully completed.</p>
+
+            <div class="highlight-box">
+                <p style="margin: 0;">
+                    You can now explore exclusive content, connect with local guides, and discover hidden gems around the island — all from the ERP app.
+                </p>
+            </div>
+
+            <div class="credentials-box">
+                <h3>Your Login Credentials</h3>
+                <div class="credentials">
+                    <p><strong>Username:</strong> {{ data.email }}</p>
+                    <p><strong>Password:</strong> {{ data.password }}</p>
+                </div>
+                <p style="font-size: 13px; color: #777; margin-top: 10px;">
+                    ⚠️ Please keep your credentials confidential and do not share them with anyone.
+                </p>
+            </div>
+
+            <p>We’re excited to have you join our growing community of explorers. Get started by logging in using your credentials:</p>
+
+            <p style="text-align: center; margin-top: 30px;">
+                <a href="https://play.google.com/store/apps/details?id=com.mozil.mozilourislandguid" class="btn">Open ERP App</a>
+            </p>
+
+            <p>If you did not register for ERP, please ignore this message.</p>
+
+            <p>Warm regards,<br><strong>The ERP Team</strong></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="footer">
+            <div class="social-links">
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" width="24" alt="Facebook"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="24" alt="Twitter"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="24" alt="Instagram"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" width="24" alt="LinkedIn"></a>
+            </div>
+            
+            <p>© 2025 ERP. All rights reserved.</p>
+            <p>
+                <a href="https://mozilourislandguide.com" style="color: #19709b; text-decoration: none;">Website</a> | 
+                <a href="#" style="color: #19709b; text-decoration: none;">Privacy Policy</a> | 
+                <a href="#" style="color: #19709b; text-decoration: none;">Contact Us</a>
+            </p>
+            <p style="font-size: 11px; margin-top: 10px;">
+                ERP Technologies, Some Address, City, Country
+            </p>
+        </div>
+    </div>
+</body>
+</html>

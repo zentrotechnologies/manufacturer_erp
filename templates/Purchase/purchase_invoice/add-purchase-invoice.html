@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Purchase Invoice{% endblock %}
+
+{% block layout %}
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="card-header text-center py-2">
+    <h5 class="fw-bold mb-0">TAX INVOICE</h5>
+    <small class="text-muted">Add Purchase Invoice</small>
+  </div>
+
+  <div class="card-body py-2">
+    <form>
+      {% csrf_token %}
+
+      <!-- BILL FROM / BILL TO -->
+      <div class="row border p-2 mb-2 small">
+        <div class="col-md-6">
+          <div class="fw-bold">Bill From (Vendor)</div>
+          <div id="vendor_name" class="fw-semibold">—</div>
+          <div id="vendor_address" class="text-muted">—</div>
+          <div>GSTIN: <span id="vendor_gstin">—</span></div>
+          <div>Contact: <span id="vendor_contact">—</span></div>
+        </div>
+
+        <div class="col-md-6 text-end">
+          <div class="fw-bold">Bill To</div>
+          <div class="fw-semibold">{{ company.name }}</div>
+          <div class="text-muted">{{ company.address }}</div>
+          <div>GSTIN: {{ company.gstin }}</div>
+        </div>
+      </div>
+
+      <!-- INVOICE META -->
+      <div class="row g-2 mb-2 small">
+        <div class="col-md-3">
+          <label>Vendor</label>
+          <select id="vendor" class="form-control form-control-sm">
+            {% for v in vendors %}
+              <option value="{{ v.id }}">{{ v.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label>Invoice No</label>
+          <input id="invoice_number" class="form-control form-control-sm">
+        </div>
+
+        <div class="col-md-3">
+          <label>Invoice Date</label>
+          <input type="date" id="invoice_date" class="form-control form-control-sm">
+        </div>
+
+        <div class="col-md-3">
+          <label>GST Type</label>
+          <select id="same_state" class="form-control form-control-sm">
+            <option value="true">CGST + SGST</option>
+            <option value="false">IGST</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ITEMS TABLE -->
+      <div class="table-responsive small">
+        <table class="table table-bordered table-sm text-center" id="items_table">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Raw Material</th>
+              <th>HSN</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Rate</th>
+              <th>GST %</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addRow()">
+        + Add Item
+      </button>
+
+      <!-- BILL SUMMARY (TEXT ONLY) -->
+      <hr class="my-2">
+
+      <div class="row small">
+        <div class="col-md-6"></div>
+        <div class="col-md-6">
+          <table class="table table-sm table-borderless mb-0">
+            <tr>
+              <td>Basic Amount</td>
+              <td class="text-end">₹ <span id="base_amount">0.00</span></td>
+            </tr>
+            <tr>
+              <td>GST</td>
+              <td class="text-end">₹ <span id="gst_amount">0.00</span></td>
+            </tr>
+
+            <tr id="cgst_row">
+              <td>CGST</td>
+              <td class="text-end">₹ <span id="cgst_amount">0.00</span></td>
+            </tr>
+            <tr id="sgst_row">
+              <td>SGST</td>
+              <td class="text-end">₹ <span id="sgst_amount">0.00</span></td>
+            </tr>
+
+            <tr id="igst_row" class="d-none">
+              <td>IGST</td>
+              <td class="text-end">₹ <span id="igst_amount">0.00</span></td>
+            </tr>
+
+            <tr class="fw-bold border-top">
+              <td>Grand Total</td>
+              <td class="text-end">₹ <span id="total_amount">0.00</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="text-end mt-2">
+        <button type="button" class="btn btn-primary btn-sm" onclick="submitInvoice()">
+          Save Invoice
+        </button>
+        <a href="/purchase/purchase-invoice" class="btn btn-danger btn-sm">
+          Cancel
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+{{ block.super }}
+
+<script>
+function addRow(){
+  let row = `
+  <tr>
+    <td class="sr"></td>
+    <td>
+      <select class="form-control form-control-sm raw_material">
+        {% for r in raw_materials %}
+          <option value="{{ r.id }}"
+            data-hsn="{{ r.hsn_code }}"
+            data-unit="{{ r.unit }}">
+            {{ r.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </td>
+    <td><input class="form-control form-control-sm hsn" readonly></td>
+    <td><input type="number" class="form-control form-control-sm qty"></td>
+    <td><input class="form-control form-control-sm unit" readonly></td>
+    <td><input type="number" class="form-control form-control-sm rate"></td>
+    <td><input type="number" class="form-control form-control-sm gst"></td>
+    <td><input class="form-control form-control-sm amount" readonly></td>
+    <td>
+      <button class="btn btn-danger btn-sm"
+        onclick="$(this).closest('tr').remove(); calculateBill();">✕</button>
+    </td>
+  </tr>`;
+  $('#items_table tbody').append(row);
+  refreshRows();
+}
+
+function refreshRows(){
+  $('#items_table tbody tr').each(function(i){
+    $(this).find('.sr').text(i+1);
+    let opt = $(this).find('.raw_material option:selected');
+    $(this).find('.hsn').val(opt.data('hsn') || '');
+    $(this).find('.unit').val(opt.data('unit') || '');
+  });
+}
+
+$(document).on('change','.raw_material',refreshRows);
+$(document).on('keyup change','.qty,.rate,.gst,#same_state',calculateBill);
+
+function calculateBill(){
+  let base = 0, gstTotal = 0;
+
+  $('#items_table tbody tr').each(function(){
+    let qty = parseFloat($(this).find('.qty').val()) || 0;
+    let rate = parseFloat($(this).find('.rate').val()) || 0;
+    let gst = parseFloat($(this).find('.gst').val()) || 0;
+
+    let amt = qty * rate;
+    let gstAmt = amt * gst / 100;
+
+    $(this).find('.amount').val((amt + gstAmt).toFixed(2));
+    base += amt;
+    gstTotal += gstAmt;
+  });
+
+  $('#base_amount').text(base.toFixed(2));
+  $('#gst_amount').text(gstTotal.toFixed(2));
+  $('#total_amount').text((base + gstTotal).toFixed(2));
+
+  if($('#same_state').val() === "true"){
+    $('#cgst_row, #sgst_row').show();
+    $('#igst_row').addClass('d-none');
+    $('#cgst_amount').text((gstTotal/2).toFixed(2));
+    $('#sgst_amount').text((gstTotal/2).toFixed(2));
+  }else{
+    $('#cgst_row, #sgst_row').hide();
+    $('#igst_row').removeClass('d-none');
+    $('#igst_amount').text(gstTotal.toFixed(2));
+  }
+}
+
+$('#vendor').on('change', function(){
+  $.ajax({
+    url: "/api/Masters/get_vendor_by_id",
+    type: "POST",
+    headers: { "Authorization": "Bearer {{ token }}" },
+    data: {
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+      id: $(this).val()
+    },
+    success: function(res){
+      if(res.response.n === 1){
+        let v = res.data;
+        $('#vendor_name').text(v.name || '—');
+        $('#vendor_address').text(v.address || '—');
+        $('#vendor_gstin').text(v.gstin || '—');
+        $('#vendor_contact').text(v.contact_number || '—');
+      }
+    }
+  });
+}).trigger('change');
+
+function submitInvoice(){
+  let items = [];
+
+  $('#items_table tbody tr').each(function(){
+    items.push({
+      raw_material: $(this).find('.raw_material').val(),
+      quantity: $(this).find('.qty').val(),
+      rate_per_unit: $(this).find('.rate').val(),
+      gst_percentage: $(this).find('.gst').val()
+    });
+  });
+
+  if(items.length === 0){
+    swal("Please add at least one item");
+    return;
+  }
+
+  let fd = new FormData();
+  fd.append('csrfmiddlewaretoken','{{ csrf_token }}');
+  fd.append('vendor',$('#vendor').val());
+  fd.append('invoice_number',$('#invoice_number').val());
+  fd.append('invoice_date',$('#invoice_date').val());
+  fd.append('same_state',$('#same_state').val());
+  fd.append('items',JSON.stringify(items));
+
+  $.ajax({
+    url:"/purchase/add-purchase-invoice",
+    type:"POST",
+    data:fd,
+    processData:false,
+    contentType:false,
+    beforeSend:()=>swal({text:"Saving...",buttons:false}),
+    success:function(res){
+      if(res.response.n === 1){
+        swal(res.response.msg).then(()=>{
+          window.location.href="/purchase/purchase-invoice";
+        });
+      }else{
+        swal(res.response.msg);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Production Inventory{% endblock %}
+
+{% block layout %}
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="card-header">Production Inventory (Finished Goods)</h5>
+
+    <div class="d-flex align-items-center">
+      <i class="ri-search-line ri-22px me-2"></i>
+      <input
+        type="text"
+        id="search"
+        class="form-control border-0 shadow-none bg-body"
+        placeholder="Search product..."
+        onkeyup="Pagination()"
+      />
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Sr No</th>
+          <th>Part Code</th>
+          <th>Product Name</th>
+          <th>Available Qty</th>
+        </tr>
+      </thead>
+      <tbody id="inventory_table_body"></tbody>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-end m-3">
+    <ul id="pagination-demo" class="pagination-sm"></ul>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+$(document).ready(function(){
+  Pagination();
+});
+
+function Pagination(){
+  $('#pagination-demo').html('');
+  loadData(1);
+}
+
+function loadData(p){
+  let fd = new FormData();
+  fd.append('p', p);
+  fd.append('searchtext', $('#search').val());
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  $.ajax({
+    url: hosturl + "/api/Inventory/production_inventory_list_pagination_api",
+    headers: {"Authorization": "Bearer {{ token }}"},
+    type: "POST",
+    data: fd,
+    processData:false,
+    contentType:false,
+
+    beforeSend: function(){
+      swal({text:"Loading...", buttons:false});
+    },
+
+    success: function(res){
+      swal.close();
+
+      let html = '';
+      let counter = ((p - 1) * 10) + 1;
+
+      if(res.count > 0){
+        $.each(res.results, function(i,o){
+          html += `
+            <tr>
+              <td>${counter++}</td>
+              <td>${o.part_code}</td>
+              <td>${o.product}</td>
+              <td>
+                <span class="badge bg-label-success">
+                  ${o.quantity}
+                </span>
+              </td>
+            </tr>
+          `;
+        });
+
+        $('#inventory_table_body').html(html);
+
+        $('#pagination-demo').twbsPagination({
+          totalPages: Math.ceil(res.count / 10),
+          visiblePages: 3,
+          onPageClick: function (event, page) {
+            loadData(page);
+          }
+        });
+
+      } else {
+        $('#inventory_table_body').html(`
+          <tr>
+            <td colspan="4" class="text-center">No Data Found</td>
+          </tr>
+        `);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

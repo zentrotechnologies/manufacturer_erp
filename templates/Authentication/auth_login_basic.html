@@ -1,0 +1,196 @@
+{% extends "layout/layout_blank.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Login - Pages{% endblock %}
+
+{% block page_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static  'assets/vendor/css/pages/page-auth.css' %}">
+{% endblock page_css %}
+
+
+{% block content %}
+<div class="position-relative">
+  <div class="authentication-wrapper authentication-basic container-p-y">
+    <div class="authentication-inner py-6 mx-4">
+
+      <!-- Login -->
+      <div class="card p-7">
+        <!-- Logo -->
+        <div class="app-brand justify-content-center">
+          <a href="" class="app-brand-link gap-3">
+            <span class="app-brand-logo demo"></span>
+            <span class="app-brand-text demo text-heading fw-semibold"> <img
+                src="{% static 'assets/img/logo/erp_logo.png' %}" width="260"></span>
+          </a>
+        </div>
+        <!-- /Logo -->
+
+        <div class="card-body mt-1">
+          <h4 class="mb-1">Welcome to ERP! 👋🏻</h4>
+          <p class="mb-5">Please sign-in to your account and start the adventure</p>
+
+          <form  class="mb-5">
+            {% csrf_token %}
+            <div class="form-floating form-floating-outline mb-5">
+              <input type="text" class="form-control" id="email" name="email-username"
+                placeholder="Enter your email or username" autofocus>
+              <label for="email">Email or Username</label>
+            </div>
+            <div class="mb-5">
+              <div class="form-password-toggle">
+                <div class="input-group input-group-merge">
+                  <div class="form-floating form-floating-outline">
+                    <input type="password" id="password" class="form-control" name="password"
+                      placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
+                      aria-describedby="password" />
+                    <label for="password">Password</label>
+                  </div>
+                  <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="mb-5 pb-2 d-flex justify-content-between pt-2 align-items-center">
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" id="remember-me">
+                <label class="form-check-label" for="remember-me">
+                  Remember Me
+                </label>
+              </div>
+              <a href="/forgot_password" class="float-end mb-1">
+                <span>Forgot Password?</span>
+              </a>
+            </div>
+            <div class="mb-5">
+              <div class="btn btn-primary d-grid w-100" onclick="return validation()">login</div>
+            </div>
+          </form>
+
+          <!-- <p class="text-center mb-5">
+            <span>New on our platform?</span>
+            <a href="">
+              <span>Create an account</span>
+            </a>
+          </p> -->
+        </div>
+      </div>
+      <!-- /Login -->
+      <img src="{% static 'assets/img/illustrations/tree-3.png' %}" alt="auth-tree"
+        class="authentication-image-object-left d-none d-lg-block">
+      <img src="{% static 'assets/img/illustrations/auth-basic-mask-light.png' %}" height="172"
+        class="authentication-image d-none d-lg-block" alt="triangle-bg">
+      <img src="{% static 'assets/img/illustrations/tree.png' %}" alt="auth-tree"
+        class="authentication-image-object-right d-none d-lg-block">
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block script %}
+{{block.super}}
+
+<script>
+  
+  function validation() {
+    var email = $("#email").val().trim();
+    var password = $("#password").val().trim();
+
+
+    if (IsValid(email)) {
+      swal({
+            icon: "error",
+            title: "",
+            text: "Please enter valid email or username",
+
+          });
+          
+      $("#email").focus();
+      return false;
+    }
+    if (IsValid(password)) {
+      // console.log("password is required")
+      swal({
+            icon: "error",
+            title: "",
+            text: "Please enter valid password",
+
+          });
+      $("#password").focus();
+      return false;
+    }
+
+    else {
+      var formData = new FormData();
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      formData.append('email', email);
+      formData.append('password', password);
+
+
+      $.ajax({
+        url: hosturl + "",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        beforeSend: function () {
+          swal({
+            icon: "info",
+            title: "",
+            text: "Loading...",
+            buttons: false,
+
+          });
+        },
+        success: function (response) {
+          // console.log("----", response)
+          if (response.response.n == 1) {
+            // swal({
+            //   icon: response.response.status,
+            //   title: "",
+            //   text: response.response.msg,
+            //   button: "Close",
+            // });
+
+
+
+            window.location.href = hosturl + '/dashboard/home';
+          }
+          else {
+            swal({
+              icon: response.response.status,
+              title: "",
+              text: response.response.msg,
+              button: "Close",
+            });
+          }
+
+
+        }
+      });
+
+    }
+
+
+  }
+
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Check if Django messages exist
+    const djangoMessages = "{{ messages }}";
+
+    {% if messages %}
+    {% for message in messages %}
+    swal({
+      icon: '{{ message.tags }}',  // 'error', 'success', etc.
+      text: '{{ message }}',
+      showConfirmButton: true,
+      confirmButtonText: 'OK'
+    });
+    {% endfor %}
+    {% endif %}
+  });
+</script>
+{%endblock script %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Edit Machine{% endblock %}
+
+{% block layout %}
+<div class="row">
+  <div class="col-xl">
+    <div class="card">
+      <div class="card-header">
+        <h5>Edit Machine</h5>
+      </div>
+
+      <div class="card-body">
+        <form>
+          {% csrf_token %}
+          <div class="row">
+
+            <div class="form-floating mb-3 col-6">
+              <input
+                type="text"
+                id="machine_code"
+                class="form-control"
+                value="{{ machine.machine_code }}"
+                placeholder="Machine Code"
+              >
+              <label>Machine Code</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <input
+                type="text"
+                id="name"
+                class="form-control"
+                value="{{ machine.name }}"
+                placeholder="Machine Name"
+              >
+              <label>Machine Name</label>
+            </div>
+
+          </div>
+
+          <div class="btn btn-primary" onclick="return validation()">Submit</div>
+          <div class="btn btn-danger" onclick="window.history.back()">Cancel</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+function validation() {
+
+  var code = $("#machine_code").val().trim();
+  var name = $("#name").val().trim();
+
+  if (IsValid(code)) {
+    swal({ icon: "error", text: "Please enter valid machine code" });
+    return false;
+  }
+
+  if (IsValid(name)) {
+    swal({ icon: "error", text: "Please enter valid machine name" });
+    return false;
+  }
+
+  var fd = new FormData();
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fd.append('id', '{{ machine.id }}');
+  fd.append('machine_code', code);
+  fd.append('name', name);
+
+  $.ajax({
+    url: hosturl + "/masters/edit-machine/{{ machine.id }}",
+    type: 'POST',
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+
+    beforeSend: () => swal({ icon: "info", text: "Loading...", buttons: false }),
+
+    success: function (res) {
+      if (res.response.n == 1) {
+        swal("Success", res.response.msg, "success")
+          .then(() => window.location.href = hosturl + "/masters/machine");
+      } else {
+        swal("Error", res.response.msg, "error");
+      }
+    }
+  });
+}
+</script>
+{% endblock page_js %}

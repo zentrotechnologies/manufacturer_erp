@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Raw Material Inventory{% endblock %}
+
+{% block layout %}
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="card-header">Raw Material Inventory</h5>
+
+    <div class="d-flex align-items-center">
+      <i class="ri-search-line ri-22px me-2"></i>
+      <input
+        type="text"
+        id="search"
+        class="form-control border-0 shadow-none bg-body"
+        placeholder="Search..."
+        onkeyup="Pagination()"
+      />
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Sr No</th>
+          <th>Raw Material</th>
+          <th>Unit</th>
+          <th>Current Stock</th>
+          <th>Last Rate</th>
+          <th>Last Transaction</th>
+        </tr>
+      </thead>
+      <tbody id="inventory_table_body"></tbody>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-end m-3">
+    <ul id="pagination-demo" class="pagination-sm"></ul>
+  </div>
+</div>
+{% endblock %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+$(document).ready(function () {
+  Pagination();
+});
+
+function Pagination() {
+  $('#pagination-demo').html('');
+  loadData(1);
+}
+
+function loadData(p) {
+  let fd = new FormData();
+  fd.append('p', p);
+  fd.append('searchtext', $('#search').val());
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  $.ajax({
+    url: hosturl + "/api/Inventory/raw_material_inventory_list_pagination_api",
+    headers: { "Authorization": "Bearer {{ token }}" },
+    type: "POST",
+    data: fd,
+    processData: false,
+    contentType: false,
+
+    beforeSend: function () {
+      swal({ text: "Loading...", buttons: false });
+    },
+
+    success: function (response) {
+      swal.close();
+
+      let html = '';
+      let counter = ((p - 1) * 10) + 1;
+
+      if (response.count > 0) {
+        $.each(response.results, function (i, o) {
+          html += `
+            <tr>
+              <td>${counter++}</td>
+              <td>${o.raw_material}</td>
+              <td>${o.unit}</td>
+              <td>
+                <span class="badge bg-label-success">
+                  ${o.current_stock}
+                </span>
+              </td>
+              <td>${o.last_rate || '-'}</td>
+              <td>${o.last_transaction || '-'}</td>
+            </tr>
+          `;
+        });
+
+        $('#inventory_table_body').html(html);
+
+        $('#pagination-demo').twbsPagination({
+          totalPages: Math.ceil(response.count / 10),
+          visiblePages: 3,
+          onPageClick: function (event, page) {
+            loadData(page);
+          }
+        });
+
+      } else {
+        $('#inventory_table_body').html(`
+          <tr>
+            <td colspan="6" class="text-center">No Data Found</td>
+          </tr>
+        `);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

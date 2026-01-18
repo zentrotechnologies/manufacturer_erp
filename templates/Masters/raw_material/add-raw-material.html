@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Add Raw Material{% endblock %}
+
+{% block layout %}
+<div class="row">
+  <div class="col-xl">
+    <div class="card">
+      <div class="card-header">
+        <h5>Add Raw Material</h5>
+      </div>
+
+      <div class="card-body">
+        <form>
+          {% csrf_token %}
+          <div class="row">
+
+            <div class="form-floating mb-3 col-6">
+              <input type="text" id="name" class="form-control" placeholder="Name">
+              <label>Name</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <input type="text" id="unit" class="form-control" placeholder="Unit">
+              <label>Unit (KG / TON / NOS)</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <input type="text" id="hsn_code" class="form-control" placeholder="HSN Code">
+              <label>HSN Code</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <select id="vendor" class="form-control">
+                {% for v in vendors %}
+                  <option value="{{v.id}}">{{v.name}}</option>
+                {% endfor %}
+              </select>
+              <label>Vendor</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <input type="number" id="price_per_unit" class="form-control">
+              <label>Price Per Unit</label>
+            </div>
+
+            <div class="form-floating mb-3 col-6">
+              <input type="number" id="gst_percentage" class="form-control">
+              <label>GST %</label>
+            </div>
+
+          </div>
+
+          <div class="btn btn-primary" onclick="return validation()">Submit</div>
+          <div class="btn btn-danger" onclick="window.history.back()">Cancel</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+function validation() {
+
+  var fd = new FormData();
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fd.append('name', $('#name').val());
+  fd.append('unit', $('#unit').val());
+  fd.append('hsn_code', $('#hsn_code').val());
+  fd.append('vendor', $('#vendor').val());
+  fd.append('price_per_unit', $('#price_per_unit').val());
+  fd.append('gst_percentage', $('#gst_percentage').val());
+
+  $.ajax({
+    url: hosturl + "/masters/add-raw-material",
+    type: 'POST',
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+
+    beforeSend: () => swal({ icon: "info", text: "Loading...", buttons: false }),
+
+    success: function (res) {
+      if (res.response.n == 1) {
+        swal("Success", res.response.msg, "success")
+          .then(() => window.location.href = hosturl + "/masters/raw-material");
+      } else {
+        swal("Error", res.response.msg, "error");
+      }
+    }
+  });
+}
+</script>
+{% endblock page_js %}

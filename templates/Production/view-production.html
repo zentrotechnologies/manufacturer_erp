@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Production Entry Details{% endblock %}
+
+{% block layout %}
+<div class="card shadow-sm">
+
+  <!-- HEADER -->
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Production Entry Details</h5>
+    <span class="badge bg-primary">
+      {{ entry.production_date }}
+    </span>
+  </div>
+
+  <div class="card-body">
+
+    <!-- SUMMARY BLOCK -->
+    <div class="row mb-3">
+      <div class="col-md-3">
+        <p class="mb-1"><b>Shift</b></p>
+        <p>{{ entry.shift }}</p>
+      </div>
+
+      <div class="col-md-3">
+        <p class="mb-1"><b>Machine</b></p>
+        <p>{{ entry.machine }}</p>
+      </div>
+
+      <div class="col-md-3">
+        <p class="mb-1"><b>Mould</b></p>
+        <p>{{ entry.mould }}</p>
+      </div>
+
+      <div class="col-md-3">
+        <p class="mb-1"><b>Operator</b></p>
+        <p>{{ entry.operator_name|default:"-" }}</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- PRODUCT SUMMARY -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <p class="mb-1"><b>Product</b></p>
+        <p>{{ entry.product }}</p>
+      </div>
+
+      <div class="col-md-2">
+        <p class="mb-1"><b>Planned Qty</b></p>
+        <p>{{ entry.planned_quantity }} NOS</p>
+      </div>
+
+      <div class="col-md-2">
+        <p class="mb-1 text-success"><b>Produced</b></p>
+        <p class="text-success fw-bold">
+          {{ entry.produced_quantity }} NOS
+        </p>
+      </div>
+
+      <div class="col-md-2">
+        <p class="mb-1 text-danger"><b>Rejected</b></p>
+        <p class="text-danger fw-bold">
+          {{ entry.rejected_quantity }} NOS
+        </p>
+      </div>
+
+      <div class="col-md-2">
+        <p class="mb-1"><b>Accepted</b></p>
+        <p class="fw-bold">
+          {{ entry.produced_quantity|floatformat:2|add:"-"|add:entry.rejected_quantity }} NOS
+        </p>
+      </div>
+    </div>
+
+    <!-- REMARKS -->
+    {% if entry.remarks %}
+    <div class="alert alert-light border">
+      <b>Remarks:</b> {{ entry.remarks }}
+    </div>
+    {% endif %}
+
+    <hr>
+
+    <!-- RAW MATERIAL CONSUMPTION -->
+    <h6 class="fw-bold mb-3">Raw Material Consumption</h6>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm text-center align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Raw Material</th>
+            <th>Unit</th>
+            <th>Qty Consumed</th>
+            <th>Rate / Unit</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in consumptions %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td class="text-start">
+              <b>{{ c.raw_material_name }}</b>
+            </td>
+            <td>{{ c.raw_material_unit }}</td>
+            <td>
+              {{ c.quantity_consumed|floatformat:2 }}
+            </td>
+            <td>
+              ₹ {{ c.rate_per_unit }}
+            </td>
+            <td class="fw-bold">
+              ₹ {{ c.value_consumed|floatformat:2 }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6">No raw material consumption found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FOOTER ACTIONS -->
+    <div class="d-flex justify-content-end mt-4">
+      <a href="/production/production-list"
+         class="btn btn-secondary">
+        Back
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

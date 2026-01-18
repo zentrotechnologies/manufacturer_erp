@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Vendor - Forms{% endblock %}
+
+{% block layout %}
+<!-- Basic Layout -->
+<div class="row">
+  <div class="col-xl">
+    <div class="card mb-12">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Add Vendor</h5>
+        <small class="text-body float-end"></small>
+      </div>
+
+      <div class="card-body">
+        <form>
+          {% csrf_token %}
+          <div class="row">
+
+            <div class="form-floating form-floating-outline mb-6 col-12">
+              <input type="text" class="form-control" id="name" placeholder="Vendor Name" />
+              <label for="name">Vendor Name</label>
+            </div>
+
+            <div class="form-floating form-floating-outline mb-6 col-12">
+              <input type="text" class="form-control" id="contact_number" placeholder="Contact Number" />
+              <label for="contact_number">Contact Number</label>
+            </div>
+
+            <div class="form-floating form-floating-outline mb-6 col-12">
+              <textarea id="address" class="form-control"
+                placeholder="Please enter address"
+                style="height: 80px;"></textarea>
+              <label for="address">Address</label>
+            </div>
+
+          </div>
+
+          <div class="btn btn-primary" onclick="return validation()">Submit</div>
+          <div class="btn btn-danger" onclick="window.history.back()">Cancel</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+
+  function validation() {
+
+    var name = $("#name").val().trim();
+    var contact_number = $("#contact_number").val().trim();
+    var address = $("#address").val().trim();
+
+    if (IsValid(name)) {
+      swal({
+        icon: "error",
+        title: "",
+        text: "Please enter valid vendor name",
+      });
+      $("#name").focus();
+      return false;
+    }
+
+    if (IsValid(contact_number)) {
+      swal({
+        icon: "error",
+        title: "",
+        text: "Please enter valid contact number",
+      });
+      $("#contact_number").focus();
+      return false;
+    }
+
+    if (IsValid(address)) {
+      swal({
+        icon: "error",
+        title: "",
+        text: "Please enter valid address",
+      });
+      $("#address").focus();
+      return false;
+    }
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('name', name);
+    formData.append('contact_number', contact_number);
+    formData.append('address', address);
+
+    $.ajax({
+      url: hosturl + "/masters/add-vendor",
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+
+      beforeSend: function () {
+        swal({
+          icon: "info",
+          title: "",
+          text: "Loading...",
+          buttons: false,
+        });
+      },
+
+      success: function (response) {
+
+        if (response.response.n == 1) {
+          swal({
+            icon: response.response.status,
+            title: "",
+            text: response.response.msg,
+            button: "Close",
+          }).then(() => {
+            window.location.href = hosturl + '/masters/vendor';
+          });
+        }
+        else {
+          swal({
+            icon: response.response.status,
+            title: "",
+            text: response.response.msg,
+            button: "Close",
+          });
+        }
+      }
+    });
+
+  }
+
+</script>
+{% endblock page_js %}

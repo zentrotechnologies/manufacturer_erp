@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification | ERP</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            line-height: 1.6;
+            color: #444;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background: linear-gradient(135deg, #19709b 0%, #6ecafc 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        .logo {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+        .content {
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .otp-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        .otp-code {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            color: #19709b;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .note {
+            background: #f0f7ff;
+            border-left: 4px solid #19709b;
+            padding: 12px;
+            margin: 25px 0;
+            font-size: 14px;
+        }
+        .footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+        }
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #19709b 0%, #6ecafc 100%);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://mozilourislandguide.com/static/assets/img/logo/erp_logo.png" alt="ERP Logo" class="logo">
+            <h1 style="color: white;">OTP Verification</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello,</p>
+            
+            <p>Thank you for connecting with ERP. To complete your verification, please use the following One-Time Password (OTP):</p>
+            
+            <div class="otp-container">
+                <p style="margin-bottom: 5px; color: #666;">Your verification code:</p>
+                <div class="otp-code">{{ otp }}</div>
+                <p style="font-size: 13px; color: #888;">(Valid for 10 minutes)</p>
+            </div>
+            
+            <div class="note">
+                <strong>Important:</strong> For your security, please do not share this OTP with anyone. ERP will never ask you for your password or OTP.
+            </div>
+            
+            <p>If you didn't request this OTP, please ignore this email or contact our support team immediately.</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="#" class="btn">Visit Our Website</a>
+            </div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/124/124010.png" width="24" alt="Facebook"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" width="24" alt="Twitter"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="24" alt="Instagram"></a>
+                <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" width="24" alt="LinkedIn"></a>
+            </div>
+            
+            <p>© 2025 ERP. All rights reserved.</p>
+            <p>
+                <a href="https://mozilourislandguide.com" style="color: #19709b; text-decoration: none;">Website</a> | 
+                <a href="#" style="color: #19709b; text-decoration: none;">Privacy Policy</a> | 
+                <a href="#" style="color: #19709b; text-decoration: none;">Contact Us</a>
+            </p>
+            <p style="font-size: 11px; margin-top: 10px;">
+                ERP Technologies, Some Address, City, Country
+            </p>
+        </div>
+    </div>
+</body>
+</html>

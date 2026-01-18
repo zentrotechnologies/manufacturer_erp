@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Edit Product{% endblock %}
+
+{% block layout %}
+<div class="card">
+  <div class="card-header">
+    <h5>Edit Product</h5>
+  </div>
+
+  <div class="card-body">
+    <form>
+      {% csrf_token %}
+
+      <!-- PRODUCT DETAILS -->
+      <div class="row">
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <input
+            type="text"
+            id="part_code"
+            class="form-control"
+            placeholder="Part Code"
+            value="{{ product.part_code }}"
+          />
+          <label for="part_code">Part Code</label>
+        </div>
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <input
+            type="text"
+            id="name"
+            class="form-control"
+            placeholder="Product Name"
+            value="{{ product.name }}"
+          />
+          <label for="name">Product Name</label>
+        </div>
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <select id="mould" class="form-control">
+            {% for m in moulds %}
+              <option value="{{ m.id }}"
+                {% if m.id == product.mould %}selected{% endif %}>
+                {{ m.mould_code }}
+              </option>
+            {% endfor %}
+          </select>
+          <label for="mould">Mould</label>
+        </div>
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <input
+            type="text"
+            id="hsn_code"
+            class="form-control"
+            placeholder="HSN Code"
+            value="{{ product.hsn_code }}"
+          />
+          <label for="hsn_code">HSN Code</label>
+        </div>
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <input
+            type="number"
+            id="price_per_unit"
+            class="form-control"
+            placeholder="Price Per Unit"
+            value="{{ product.price_per_unit }}"
+          />
+          <label for="price_per_unit">Price Per Unit</label>
+        </div>
+
+        <div class="form-floating form-floating-outline mb-4 col-4">
+          <input
+            type="number"
+            id="gst_percentage"
+            class="form-control"
+            placeholder="GST %"
+            value="{{ product.gst_percentage }}"
+          />
+          <label for="gst_percentage">GST %</label>
+        </div>
+
+      </div>
+
+      <hr>
+      <h6>Raw Material Configuration (BOM)</h6>
+
+      <!-- BOM TABLE -->
+      <div class="table-responsive">
+        <table class="table table-bordered" id="bom_table">
+          <thead>
+            <tr>
+              <th width="45%">Raw Material</th>
+              <th width="35%">Quantity</th>
+              <th width="20%">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            {% for b in product_raw_materials %}
+            <tr>
+              <td>
+                <select class="form-control raw_material">
+                  {% for r in raw_materials %}
+                    <option value="{{ r.id }}"
+                      {% if r.id == b.raw_material %}selected{% endif %}>
+                      {{ r.name }} ({{ r.unit }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control quantity"
+                  value="{{ b.quantity }}"
+                />
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="$(this).closest('tr').remove()"
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+
+          </tbody>
+        </table>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-secondary mb-3"
+        onclick="addBomRow()"
+      >
+        Add Raw Material
+      </button>
+
+      <br>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        onclick="submitForm()"
+      >
+        Update
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger"
+        onclick="window.history.back()"
+      >
+        Cancel
+      </button>
+
+    </form>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+function addBomRow() {
+  let row = `
+    <tr>
+      <td>
+        <select class="form-control raw_material">
+          {% for r in raw_materials %}
+            <option value="{{ r.id }}">{{ r.name }} ({{ r.unit }})</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <input type="number" class="form-control quantity" />
+      </td>
+      <td>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm"
+          onclick="$(this).closest('tr').remove()"
+        >
+          Remove
+        </button>
+      </td>
+    </tr>`;
+  $('#bom_table tbody').append(row);
+}
+
+function submitForm() {
+
+  let raw_materials = [];
+
+  $('#bom_table tbody tr').each(function () {
+    raw_materials.push({
+      raw_material: $(this).find('.raw_material').val(),
+      quantity: $(this).find('.quantity').val()
+    });
+  });
+
+  let fd = new FormData();
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fd.append('id', '{{ product.id }}');
+  fd.append('part_code', $('#part_code').val());
+  fd.append('name', $('#name').val());
+  fd.append('mould', $('#mould').val());
+  fd.append('hsn_code', $('#hsn_code').val());
+  fd.append('price_per_unit', $('#price_per_unit').val());
+  fd.append('gst_percentage', $('#gst_percentage').val());
+  fd.append('raw_materials', JSON.stringify(raw_materials));
+
+  $.ajax({
+    url: hosturl + "/masters/edit-product/{{ product.id }}",
+    type: "POST",
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: "json",
+
+    beforeSend: function () {
+      swal({
+        icon: "info",
+        title: "",
+        text: "Updating...",
+        buttons: false
+      });
+    },
+
+    success: function (response) {
+      if (response.response.n === 1) {
+        swal({
+          icon: response.response.status,
+          text: response.response.msg,
+          button: "Close"
+        }).then(() => {
+          window.location.href = hosturl + "/masters/product";
+        });
+      } else {
+        swal({
+          icon: response.response.status,
+          text: response.response.msg,
+          button: "Close"
+        });
+      }
+    }
+  });
+}
+</script>
+{% endblock page_js %}

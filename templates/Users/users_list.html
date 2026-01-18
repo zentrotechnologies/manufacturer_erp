@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Users List{% endblock %}
+
+{% block layout %}
+<!-- Basic Layout -->
+<div class="card">
+    <div class="row justify-content-between align-items-center">
+        <div class="col-lg-4">
+            <h5 class="card-header">Users</h5>
+        </div>
+        <div class="col-lg-8">
+
+            <div class="row justify-content-end mx-2">
+                <div class="d-flex align-items-center col-lg-3">
+                    <i class="ri-search-line ri-22px me-2"></i>
+                    <input type="text" id="search" class="form-control border-0 shadow-none bg-body"
+                        placeholder="Search..." aria-label="Search..." onkeyup="Pagination()" />
+                </div>
+                <div class="form-floating form-floating-outline col-lg-3 my-2">
+                    <select id="activation_status" class="form-select select2-init" aria-label="Default select example"
+                        onchange="Pagination()">
+                        <option value="">All</option>
+                        <option value="Active">Active</option>
+                        <option value="Deactive">Deactive</option>
+
+
+                    </select>
+                    <label for="activation_status">Activation Status</label>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="table-responsive text-nowrap">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Sr No</th>
+                    <th>Name</th>
+                    <th>Email </th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Activation Status</th>
+                </tr>
+            </thead>
+            <tbody class="table-border-bottom-0" id="users_table_body">
+
+
+            </tbody>
+        </table>
+        <div class=" d-flex justify-content-end m-3" id="secondpagination-demo2">
+            <ul id="pagination-demo2" class="pagination-sm"></ul>
+        </div>
+    </div>
+</div>
+{% endblock layout %}
+
+
+{% block page_js %}
+{{block.super}}
+
+<script>
+    $(document).ready(function () {
+
+        Pagination()
+    });
+    
+    function Pagination() {
+        var testflag = true;
+        $('#secondpagination-demo2').html('<ul id="pagination-demo2" class="pagination-sm"></ul>');
+        get_table_data(1);
+
+    }
+
+    function get_table_data(p) {
+        var search = $('#search').val()
+        if (search == undefined) {
+            search = ''
+        }
+        var activation_status = $('#activation_status').val()
+        if (activation_status != '') {
+            if (activation_status == 'Active') {
+                activation_status = true
+            } else {
+                activation_status = false
+            }
+        }
+        var fd = new FormData()
+        fd.append('p', p)
+        fd.append('searchtext', search)
+        fd.append('activation_status', activation_status)
+
+        fd.append('csrfmiddlewaretoken', '{{csrf_token}}')
+        $.ajax({
+            url: hosturl + "/api/User/user_list_pagination_api",
+            data: fd,
+            headers: { "Authorization": "Bearer {{token}}" },
+
+            type: 'POST',
+            processData: false,
+            contentType: false,
+            beforeSend: function () {
+                swal({
+                    icon: "info",
+                    title: "",
+                    text: "Loading...",
+                    buttons: false,
+
+                });
+            },
+            success: function (response) {
+                var infohtml = ''
+                swal.close()
+                // console.log('response d', response)
+                if (response.count != 0) {
+                    var counter = parseInt(p + "1") - parseInt(10)
+
+                    $.each(response.results, function (i, o) {
+                        infohtml += `
+                            
+                                                
+                                  <tr>
+                                        <td>
+                                            ${counter}
+                                        </td>
+                                        <td>                         
+                                            <div>${o.Username || ''}</div>
+                                        </td>
+                                        <td>
+                                            <div>${o.email || ''}</div>
+                                        </td>
+                                        <td>
+                                            <div>${o.mobileNumber || ''}</div>
+                                        </td>
+                                        <td>
+                                            <div>${o.Role_name || ''}</div>
+
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="status${o.id}" ${o.status ? `checked` : ``}  onchange="change_status('${o.id}',this)">
+                                            <label class="form-check-label" for="status${o.id}" >${o.status ? `Active` : `Deactive`}</label>
+                                            </div>
+                                        </td>
+                                    </tr>
+                            
+                            
+                            
+           
+                      `
+
+                        counter += 1
+                    });
+                    $('#users_table_body').html(infohtml);
+                    var totalfilter = Math.ceil(parseInt(response.count) / 10);
+                    $('#pagination-demo2').twbsPagination({
+                        totalPages: totalfilter,
+                        visiblePages: 3,
+                        next: 'Next',
+                        prev: 'Prev',
+                        onPageClick: function (event, page) {
+                            var testflag = true;
+                            //fetch content and render here
+                            filternamepageno = page
+                            if (testflag == true) {
+                                testflag = false;
+                                get_table_data(page)
+                            }
+                            $('#page-content').text('Page ' + page) + ' content here';
+                        }
+                    })
+
+
+
+
+                } else {
+                    infohtml = `
+                                <tr class="border-bottom text-center">
+                                    <td colspan="6">No Data found</td>
+                                </tr>
+                    `
+                    $('#users_table_body').html(infohtml);
+
+                    swal({
+                        icon: "error",
+                        title: "",
+                        text: "No Data Found !",
+                        button: "Close",
+                    });
+                }
+
+            }
+        })
+
+    }
+
+    function change_status(id, input) {
+
+
+        swal({
+            title: "Are you sure?",
+            text: "you want to change status.",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true
+        })
+            .then((willDelete) => {
+                if (willDelete) {
+                    $.ajax({
+                        url: hosturl + "/api/User/change_user_status",
+                        type: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer {{token}}'
+                        },
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                            'id': id
+                        },
+                        dataType: 'json',
+                        beforeSend: function () {
+
+
+
+                        },
+                        success: function (response) {
+                            if (response['response']['n'] == 1) {
+                                $('#status' + id).prop('checked', response['data']['status'])
+                                const label = $(`label[for="status${id}"]`);
+                                if (response['data']['status']) {
+                                    label.text('Active');
+                                } else {
+                                    label.text('Deactive');
+                                }
+                                swal({
+                                    icon: "success",
+                                    title: "",
+                                    text: response['response']['msg'],
+                                    button: "Close",
+                                })
+                            }
+                            else {
+                                swal({
+                                    icon: "error",
+                                    title: "",
+                                    text: response['response']['msg'],
+                                    button: "Close",
+                                }).then(() => {
+                                    // Code to execute after the user closes the SweetAlert dialog
+                                    location.reload(); // Reload the page
+                                });
+                            }
+
+
+
+
+                        }
+                    });
+
+                } else {
+                    if (input.checked) {
+                        $('#status' + id).prop('checked', false)
+                    } else {
+                        $('#status' + id).prop('checked', true)
+
+                    }
+
+                }
+            })
+    }
+
+
+
+</script>
+{%endblock page_js %}

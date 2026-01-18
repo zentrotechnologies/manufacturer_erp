@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Sales Invoices{% endblock %}
+
+{% block layout %}
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="card-header mb-0">Sales Invoices</h5>
+
+    <div class="d-flex align-items-center p-3">
+      <input type="text"
+             id="search"
+             class="form-control me-2"
+             placeholder="Search Invoice / Customer"
+             onkeyup="Pagination()">
+
+      <a href="/sales/add-sales-invoice"
+         class="btn btn-primary">
+        + Add Sales Invoice
+      </a>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Invoice No</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th class="text-end">Base Amount</th>
+          <th class="text-end">GST</th>
+          <th class="text-end">Total</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody id="invoice_table"></tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="d-flex justify-content-end p-3">
+    <ul id="pagination-demo" class="pagination-sm"></ul>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+{{ block.super }}
+
+<script>
+$(document).ready(function () {
+  Pagination();
+});
+
+function Pagination() {
+  $('#pagination-demo').html('');
+  loadInvoices(1);
+}
+
+function loadInvoices(p) {
+
+  let fd = new FormData();
+  fd.append('p', p);
+  fd.append('searchtext', $('#search').val());
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  $.ajax({
+    url: hosturl + "/api/Sales/sales_invoice_list_pagination_api",
+    headers: { "Authorization": "Bearer {{ token }}" },
+    type: "POST",
+    data: fd,
+    processData: false,
+    contentType: false,
+
+    beforeSend: function () {
+      swal({
+        icon: "info",
+        text: "Loading...",
+        buttons: false
+      });
+    },
+
+    success: function (res) {
+      swal.close();
+
+      let html = '';
+      let counter = ((p - 1) * 10) + 1;
+
+      if (res.count > 0) {
+
+        $.each(res.results, function (i, o) {
+          html += `
+            <tr>
+              <td>${counter++}</td>
+              <td><b>${o.invoice_number}</b></td>
+              <td>${o.invoice_date}</td>
+              <td>${o.customer_name}</td>
+              <td class="text-end">₹ ${parseFloat(o.base_amount).toFixed(2)}</td>
+              <td class="text-end">₹ ${parseFloat(o.gst_amount).toFixed(2)}</td>
+              <td class="text-end fw-bold">₹ ${parseFloat(o.total_amount).toFixed(2)}</td>
+              <td class="text-center">
+                <a href="/sales/view-sales-invoice/${o.id}"
+                   class="btn btn-sm btn-outline-info">
+                  View
+                </a>
+              </td>
+            </tr>
+          `;
+        });
+
+        $('#invoice_table').html(html);
+
+        let totalPages = Math.ceil(res.count / 10);
+
+        $('#pagination-demo').twbsPagination({
+          totalPages: totalPages,
+          visiblePages: 3,
+          next: 'Next',
+          prev: 'Prev',
+          onPageClick: function (event, page) {
+            loadInvoices(page);
+          }
+        });
+
+      } else {
+        $('#invoice_table').html(`
+          <tr>
+            <td colspan="8" class="text-center text-muted">
+              No sales invoices found
+            </td>
+          </tr>
+        `);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

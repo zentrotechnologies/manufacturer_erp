@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Raw Material - Forms{% endblock %}
+
+{% block layout %}
+<!-- Basic Layout -->
+<div class="row">
+  <div class="col-xl">
+    <div class="card mb-12">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Edit Raw Material</h5>
+        <small class="text-body float-end"></small>
+      </div>
+
+      <div class="card-body">
+        <form>
+          {% csrf_token %}
+          <div class="row">
+
+            <!-- Name -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                placeholder="Raw Material Name"
+                value="{{ raw_material.name }}"
+              />
+              <label for="name">Raw Material Name</label>
+            </div>
+
+            <!-- Unit -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <input
+                type="text"
+                class="form-control"
+                id="unit"
+                placeholder="Unit (KG / TON / NOS)"
+                value="{{ raw_material.unit }}"
+              />
+              <label for="unit">Unit</label>
+            </div>
+
+            <!-- HSN Code -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <input
+                type="text"
+                class="form-control"
+                id="hsn_code"
+                placeholder="HSN Code"
+                value="{{ raw_material.hsn_code }}"
+              />
+              <label for="hsn_code">HSN Code</label>
+            </div>
+
+            <!-- Vendor -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <select id="vendor" class="form-control">
+                {% for v in vendors %}
+                  <option value="{{ v.id }}"
+                    {% if raw_material.vendor == v.id %}selected{% endif %}>
+                    {{ v.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <label for="vendor">Vendor</label>
+            </div>
+
+            <!-- Price -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <input
+                type="number"
+                class="form-control"
+                id="price_per_unit"
+                placeholder="Price Per Unit"
+                value="{{ raw_material.price_per_unit }}"
+              />
+              <label for="price_per_unit">Price Per Unit</label>
+            </div>
+
+            <!-- GST -->
+            <div class="form-floating form-floating-outline mb-6 col-6">
+              <input
+                type="number"
+                class="form-control"
+                id="gst_percentage"
+                placeholder="GST %"
+                value="{{ raw_material.gst_percentage }}"
+              />
+              <label for="gst_percentage">GST %</label>
+            </div>
+
+          </div>
+
+          <div class="btn btn-primary" onclick="return validation()">Submit</div>
+          <div class="btn btn-danger" onclick="window.history.back()">Cancel</div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock layout %}
+{% block page_js %}
+{{ block.super }}
+
+<script>
+
+function validation() {
+
+  var name = $("#name").val().trim();
+  var unit = $("#unit").val().trim();
+  var vendor = $("#vendor").val();
+  var price = $("#price_per_unit").val();
+  var gst = $("#gst_percentage").val();
+
+  if (IsValid(name)) {
+    swal({ icon: "error", text: "Please enter valid raw material name" });
+    return false;
+  }
+
+  if (IsValid(unit)) {
+    swal({ icon: "error", text: "Please enter valid unit" });
+    return false;
+  }
+
+  if (IsValid(vendor)) {
+    swal({ icon: "error", text: "Please select vendor" });
+    return false;
+  }
+
+  var fd = new FormData();
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  fd.append('id', '{{ raw_material.id }}');
+  fd.append('name', name);
+  fd.append('unit', unit);
+  fd.append('hsn_code', $("#hsn_code").val());
+  fd.append('vendor', vendor);
+  fd.append('price_per_unit', price);
+  fd.append('gst_percentage', gst);
+
+  $.ajax({
+    url: hosturl + "/masters/edit-raw-material/{{ raw_material.id }}",
+    type: 'POST',
+    data: fd,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+
+    beforeSend: function () {
+      swal({ icon: "info", text: "Loading...", buttons: false });
+    },
+
+    success: function (response) {
+      if (response.response.n == 1) {
+        swal({
+          icon: response.response.status,
+          text: response.response.msg,
+          button: "Close",
+        }).then(() => {
+          window.location.href = hosturl + '/masters/raw-material';
+        });
+      } else {
+        swal({
+          icon: response.response.status,
+          text: response.response.msg,
+          button: "Close",
+        });
+      }
+    }
+  });
+
+}
+
+</script>
+{% endblock page_js %}

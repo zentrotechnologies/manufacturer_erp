@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block layout %}
+<div class="container-fluid">
+
+  <!-- PAGE HEADER -->
+
+
+  <!-- KPI CARDS -->
+  <div class="row g-3">
+
+    <!-- TODAY PRODUCTION -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-primary">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <small class="text-muted">Today Production</small>
+              <h5 class="fw-bold mb-0" id="today_production">0</h5>
+            </div>
+            <i class="ri-settings-3-line fs-3 text-primary"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAW MATERIAL STOCK -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-warning">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <small class="text-muted">Low Raw Material</small>
+              <h5 class="fw-bold mb-0" id="low_stock">0</h5>
+            </div>
+            <i class="ri-stack-line fs-3 text-warning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PURCHASE PENDING -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-danger">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <small class="text-muted">Pending Purchase</small>
+              <h5 class="fw-bold mb-0" id="pending_purchase">₹ 0</h5>
+            </div>
+            <i class="ri-shopping-cart-line fs-3 text-danger"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALES THIS MONTH -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-start border-success">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <small class="text-muted">Sales This Month</small>
+              <h5 class="fw-bold mb-0" id="monthly_sales">₹ 0</h5>
+            </div>
+            <i class="ri-bar-chart-2-line fs-3 text-success"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="row mt-4">
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+          Quick Actions
+        </div>
+        <div class="card-body">
+          <a href="/production/add-production-entry" class="btn btn-outline-primary btn-sm mb-2 w-100">
+            ➕ Add Production Entry
+          </a>
+          <a href="/purchase/add-purchase-invoice" class="btn btn-outline-warning btn-sm mb-2 w-100">
+            🧾 Add Purchase Invoice
+          </a>
+          <a href="/production/add-sales-invoice" class="btn btn-outline-success btn-sm mb-2 w-100">
+            💰 Add Sales Invoice
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY FEED -->
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">
+          Recent Activity
+        </div>
+        <div class="card-body small" id="recent_activity">
+          <div class="text-muted">No recent activity</div>
+        </div>
+      </div>
+    </div>
+    <!-- OPERATIONS ROW -->
+    <div class="row mt-4 g-3">
+
+      <!-- TODAY PRODUCTION DETAILS -->
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-header fw-bold">
+            Today Production Summary
+          </div>
+          <div class="card-body p-2">
+            <table class="table table-sm table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Machine</th>
+                  <th>Product</th>
+                  <th class="text-end">Qty</th>
+                </tr>
+              </thead>
+              <tbody id="today_production_table">
+                <tr>
+                  <td colspan="3" class="text-center text-muted">
+                    No data
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOW STOCK ALERT -->
+      <div class="col-md-6">
+        <div class="card shadow-sm border-start border-warning">
+          <div class="card-header fw-bold text-warning">
+            ⚠ Low Raw Material Stock
+          </div>
+          <div class="card-body p-2">
+            <table class="table table-sm table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Material</th>
+                  <th class="text-end">Balance</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody id="low_stock_table">
+                <tr>
+                  <td colspan="3" class="text-center text-muted">
+                    All stocks are healthy
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- SALES & PURCHASE ROW -->
+    <div class="row mt-4 g-3">
+
+      <!-- TODAY SALES -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-bold">
+            Today Sales
+          </div>
+          <div class="card-body text-center">
+            <h4 class="fw-bold text-success mb-1" id="today_sales">
+              ₹ 0.00
+            </h4>
+            <small class="text-muted">Invoices generated today</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDING PURCHASE INVOICES -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-bold">
+            Pending Purchases
+          </div>
+          <div class="card-body p-2">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Invoice</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="pending_purchase_table">
+                <tr>
+                  <td colspan="2" class="text-center text-muted">
+                    No pending invoices
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTION VS SALES -->
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-header fw-bold">
+            Production vs Sales (Today)
+          </div>
+          <div class="card-body text-center">
+            <div>
+              <small>Produced</small>
+              <h6 id="prod_vs_sales_prod">0</h6>
+            </div>
+            <div>
+              <small>Sold</small>
+              <h6 id="prod_vs_sales_sale">0</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block page_js %}
+{{ block.super }}
+
+<script>
+  $(document).ready(function () {
+    loadDashboard();
+  });
+
+  function loadDashboard() {
+    $.ajax({
+      url: hosturl + "/api/Dashboard/dashboard_summary_api",
+      headers: { "Authorization": "Bearer {{ token }}" },
+      type: "GET",
+      success: function (res) {
+
+        let d = res.data;
+
+        // KPI
+        $('#today_production').text(d.today_production + " NOS");
+        $('#low_stock').text(d.low_stock_count + " Items");
+        $('#pending_purchase').text("₹ " + Number(d.pending_purchase).toFixed(2));
+        $('#monthly_sales').text("₹ " + Number(d.monthly_sales).toFixed(2));
+
+        // Recent Activity
+        if (d.recent_activity.length) {
+          let html = "";
+          d.recent_activity.forEach(x => {
+            html += `<div class="mb-1">${x}</div>`;
+          });
+          $('#recent_activity').html(html);
+        }
+
+        // Today Production Table
+        if (d.today_production_detail?.length) {
+          let html = "";
+          d.today_production_detail.forEach(x => {
+            html += `
+        <tr>
+          <td>${x.machine}</td>
+          <td>${x.product}</td>
+          <td class="text-end">${x.qty}</td>
+        </tr>`;
+          });
+          $('#today_production_table').html(html);
+        }
+
+        // Low Stock Table
+        if (d.low_stock_items.length) {
+          let html = "";
+          d.low_stock_items.forEach(x => {
+            html += `
+        <tr>
+          <td>${x.name}</td>
+          <td class="text-end text-danger fw-bold">${x.qty}</td>
+          <td>${x.unit}</td>
+        </tr>`;
+          });
+          $('#low_stock_table').html(html);
+        }
+
+        // Pending Purchase Table
+        if (d.pending_purchase_list?.length) {
+          let html = "";
+          d.pending_purchase_list.forEach(x => {
+            html += `
+        <tr>
+          <td>${x.invoice}</td>
+          <td class="text-end">₹ ${x.amount}</td>
+        </tr>`;
+          });
+          $('#pending_purchase_table').html(html);
+        }
+
+        // Today Sales
+        $('#today_sales').text("₹ " + Number(d.today_sales || 0).toFixed(2));
+
+        // Production vs Sales
+        $('#prod_vs_sales_prod').text(d.today_production || 0);
+        $('#prod_vs_sales_sale').text(d.today_sales_qty || 0);
+      }
+    });
+  }
+</script>
+
+{% endblock %}

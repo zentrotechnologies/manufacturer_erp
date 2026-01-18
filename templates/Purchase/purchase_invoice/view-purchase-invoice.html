@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}View Purchase Invoice{% endblock %}
+
+{% block layout %}
+<div class="card" id="printArea">
+
+  <!-- HEADER -->
+  <div class="card-header text-center border-bottom">
+    <h4 class="fw-bold">TAX INVOICE</h4>
+    <small>(Duplicate for Buyer)</small>
+  </div>
+
+  <div class="card-body">
+
+    <!-- BILL FROM / BILL TO -->
+    <div class="row mb-3">
+      <!-- BILL FROM (VENDOR) -->
+      <div class="col-md-6 border p-3">
+        <h6 class="fw-bold">Bill From (Supplier)</h6>
+        <p class="mb-1"><b>{{ invoice.vendor_details.name }}</b></p>
+        <p class="mb-1">{{ invoice.vendor_details.address }}</p>
+        <p class="mb-1">GSTIN: {{ invoice.vendor_details.gstin }}</p>
+        <p class="mb-0">Contact: {{ invoice.vendor_details.contact_number }}</p>
+      </div>
+
+      <!-- BILL TO (YOUR COMPANY) -->
+      <div class="col-md-6 border p-3">
+        <h6 class="fw-bold">Bill To</h6>
+        <p class="mb-1"><b>{{ company.name }}</b></p>
+        <p class="mb-1">{{ company.address }}</p>
+        <p class="mb-0">GSTIN: {{ company.gstin }}</p>
+      </div>
+    </div>
+
+    <!-- INVOICE META -->
+    <div class="row mb-3">
+      <div class="col-md-3"><b>Invoice No:</b> {{ invoice.invoice_number }}</div>
+      <div class="col-md-3"><b>Date:</b> {{ invoice.invoice_date }}</div>
+      <div class="col-md-3"><b>Payment:</b> {{ invoice.payment_status }}</div>
+      <div class="col-md-3">
+        <b>GST Type:</b>
+        {% if invoice.same_state %}
+        CGST + SGST
+        {% else %}
+        IGST
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <div class="table-responsive">
+      <table class="table table-bordered text-center">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th>HSN</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>Rate</th>
+            <th>GST %</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.raw_material.name }}</td>
+            <td>{{ item.hsn_code }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.raw_material.unit }}</td>
+            <td>{{ item.rate_per_unit }}</td>
+            <td>{{ item.gst_percentage }}%</td>
+            <td>{{ item.total_amount }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TOTALS -->
+    <div class="row mt-3">
+      <div class="col-md-6"></div>
+      <div class="col-md-6">
+        <table class="table table-bordered">
+          <tr>
+            <th>Basic Amount</th>
+            <td class="text-end">{{ invoice.base_amount }}</td>
+          </tr>
+          <tr>
+            <th>GST Amount</th>
+            <td class="text-end">{{ invoice.gst_amount }}</td>
+          </tr>
+
+          {% if invoice.same_state %}
+          <tr>
+            <th>CGST</th>
+            <td class="text-end">{{ cgst|floatformat:2 }}</td>
+          </tr>
+          <tr>
+            <th>SGST</th>
+            <td class="text-end">{{ sgst|floatformat:2 }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <th>IGST</th>
+            <td class="text-end">{{ igst|floatformat:2 }}</td>
+          </tr>
+          {% endif %}
+
+
+          <tr class="table-light">
+            <th class="fw-bold">Grand Total</th>
+            <td class="fw-bold text-end">{{ invoice.total_amount }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <p><b>Payment Terms:</b> Immediate</p>
+        <p class="mb-0">Goods once sold will not be taken back.</p>
+      </div>
+      <div class="col-md-6 text-end">
+        <p>For <b>{{ invoice.vendor.name }}</b></p>
+        <br><br>
+        <p>Authorized Signatory</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ACTION BUTTONS -->
+<div class="text-end mt-3">
+  <button class="btn btn-primary" onclick="printInvoice()">
+    <i class="ri-printer-line"></i> Print
+  </button>
+  <a href="/purchase/purchase-invoice" class="btn btn-secondary">Back</a>
+</div>
+{% endblock %}
+{% block page_js %}
+<script>
+  function printInvoice() {
+    let printContents = document.getElementById("printArea").innerHTML;
+    let originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    location.reload();
+  }
+</script>
+{% endblock %}
