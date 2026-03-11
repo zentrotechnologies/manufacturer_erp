@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Batch{% endblock %}
+
+{% block layout %}
+
+<div class="card">
+
+    <div class="card-header">
+        <h5>Edit Batch</h5>
+    </div>
+
+    <div class="card-body">
+
+        <form>
+
+            {% csrf_token %}
+
+            <input type="hidden"
+            id="batch_id"
+            value="{{batch.id}}">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <label>Batch Name</label>
+
+                    <input type="text"
+                    id="batch_name"
+                    value="{{batch.batch_name}}"
+                    class="form-control">
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label>Product</label>
+
+                    <select id="product"
+                    class="form-control">
+
+                        {% for p in products %}
+
+                        <option value="{{p.id}}"
+                        {% if p.id == batch.product %}selected{% endif %}>
+                            {{p.name}}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label>Batch Weight</label>
+
+                    <input type="number"
+                    id="batch_weight_kg"
+                    value="{{batch.batch_weight_kg}}"
+                    class="form-control">
+
+                </div>
+
+                <div class="col-md-4 mt-3">
+
+                    <label>Standard Output Qty</label>
+
+                    <input type="number"
+                    id="standard_output_qty"
+                    value="{{batch.standard_output_qty}}"
+                    class="form-control">
+
+                </div>
+
+            </div>
+
+            <br>
+
+            <button type="button"
+            onclick="updateBatch()"
+            class="btn btn-primary">
+
+                Update
+
+            </button>
+
+            <a href="/batch" class="btn btn-danger">
+                Cancel
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+{{ block.super }}
+
+<script>
+
+function updateBatch(){
+
+    let fd = new FormData();
+
+    fd.append('csrfmiddlewaretoken','{{csrf_token}}');
+    fd.append('id',$('#batch_id').val());
+    fd.append('batch_name',$('#batch_name').val());
+    fd.append('product',$('#product').val());
+    fd.append('batch_weight_kg',$('#batch_weight_kg').val());
+    fd.append('standard_output_qty',$('#standard_output_qty').val());
+
+    $.ajax({
+
+        url:"/batch/edit-batch/{{batch.id}}",
+        type:"POST",
+        data:fd,
+        processData:false,
+        contentType:false,
+
+        success:function(res){
+
+            if(res.response.n==1){
+
+                swal(res.response.msg)
+
+                .then(()=>{
+                    window.location.href="/batch";
+                });
+
+            }
+            else{
+                swal(res.response.msg);
+            }
+
+        }
+
+    });
+
+}
+
+</script>
+
+{% endblock %}

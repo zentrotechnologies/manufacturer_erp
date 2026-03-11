@@ -41,4 +41,8 @@ urlpatterns = [
     path('update_product', update_product.as_view()),
     path('delete_product', delete_product.as_view()),
 
+
+
+
+
 ]

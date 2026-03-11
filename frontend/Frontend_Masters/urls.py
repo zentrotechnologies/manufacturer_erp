@@ -28,5 +28,10 @@ urlpatterns = [
     path('product', v.product, name='product'),
     path('add-product', v.add_product, name='add_product'),
     path('edit-product/<int:id>', v.edit_product, name='edit_product'),
+    
+    path('batch', v.batch),
+    path('add-batch', v.add_batch),
+    path('edit-batch/<int:id>', v.edit_batch),
+    path('delete-batch', v.delete_batch),
 
 ]

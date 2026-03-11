@@ -33,7 +33,7 @@
           <label>Machine</label>
           <select id="machine" class="form-control">
             {% for m in machines %}
-              <option value="{{m.id}}">{{m.machine_code}}</option>
+            <option value="{{m.id}}">{{m.machine_code}}</option>
             {% endfor %}
           </select>
         </div>
@@ -42,7 +42,7 @@
           <label>Mould</label>
           <select id="mould" class="form-control">
             {% for m in moulds %}
-              <option value="{{m.id}}">{{m.mould_code}}</option>
+            <option value="{{m.id}}">{{m.mould_code}}</option>
             {% endfor %}
           </select>
         </div>
@@ -51,26 +51,36 @@
           <label>Product</label>
           <select id="product" class="form-control">
             {% for p in products %}
-              <option value="{{p.id}}">{{p.name}}</option>
+            <option value="{{p.id}}">{{p.name}}</option>
             {% endfor %}
           </select>
         </div>
-
         <div class="col-md-4 mt-3">
-          <label>Planned Qty</label>
-          <input type="number" id="planned_quantity" class="form-control">
+          <label>Batch</label>
+          <select id="batch" class="form-control">
+            {% for b in batches %}
+            <option value="{{b.id}}">{{b.batch_name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 mt-3">
+          <label>Batches Made</label>
+          <input type="number" id="batches_made" class="form-control">
         </div>
 
         <div class="col-md-4 mt-3">
-          <label>Produced Qty</label>
-          <input type="number" id="produced_quantity" class="form-control">
+          <label>Finished Qty</label>
+          <input type="number" id="finished_qty" class="form-control">
         </div>
 
         <div class="col-md-4 mt-3">
           <label>Rejected Qty</label>
-          <input type="number" id="rejected_quantity" class="form-control" value="0">
+          <input type="number" id="rejected_qty" class="form-control" value="0">
         </div>
-
+        <div class="col-md-4 mt-3">
+          <label>Accepted Qty</label>
+          <input type="number" id="accepted_qty" class="form-control" readonly>
+        </div>
         <div class="col-md-8 mt-3">
           <label>Operator Name</label>
           <input type="text" id="operator_name" class="form-control">
@@ -97,53 +107,62 @@
 {% block page_js %}
 {{block.super}}
 <script>
-function submitProduction(){
+  $('#finished_qty,#rejected_qty').on('keyup change', function () {
 
-  let produced = parseFloat($('#produced_quantity').val()) || 0;
-  let rejected = parseFloat($('#rejected_quantity').val()) || 0;
+    let produced = parseFloat($('#finished_qty').val()) || 0;
+    let rejected = parseFloat($('#rejected_qty').val()) || 0;
 
-  if(produced <= 0){
-    swal("Produced quantity must be greater than zero");
-    return;
-  }
-
-  if(rejected >= produced){
-    swal("Rejected quantity cannot be equal or more than produced");
-    return;
-  }
-
-  let fd = new FormData();
-  fd.append('csrfmiddlewaretoken','{{csrf_token}}');
-  fd.append('production_date',$('#production_date').val());
-  fd.append('shift',$('#shift').val());
-  fd.append('machine',$('#machine').val());
-  fd.append('mould',$('#mould').val());
-  fd.append('product',$('#product').val());
-  fd.append('planned_quantity',$('#planned_quantity').val());
-  fd.append('produced_quantity',produced);
-  fd.append('rejected_quantity',rejected);
-  fd.append('operator_name',$('#operator_name').val());
-  fd.append('remarks',$('#remarks').val());
-
-  $.ajax({
-    url: "/production/add-production-entry",
-    type: "POST",
-    data: fd,
-    processData:false,
-    contentType:false,
-
-    beforeSend:()=>swal({text:"Saving...",buttons:false}),
-
-    success:function(res){
-      if(res.response.n===1){
-        swal(res.response.msg).then(()=>{
-          window.location.href="/production/production-list";
-        });
-      }else{
-        swal(res.response.msg);
-      }
-    }
+    $('#accepted_qty').val(produced - rejected);
   });
-}
+  function submitProduction() {
+
+    let finished = parseFloat($('#finished_qty').val()) || 0;
+    let rejected = parseFloat($('#rejected_qty').val()) || 0;
+
+    if (finished <= 0) {
+      swal("finished quantity must be greater than zero");
+      return;
+    }
+
+    if (rejected >= finished) {
+      swal("Rejected quantity cannot be equal or more than finished");
+      return;
+    }
+
+    let fd = new FormData();
+    fd.append('csrfmiddlewaretoken', '{{csrf_token}}');
+    fd.append('production_date', $('#production_date').val());
+    fd.append('shift', $('#shift').val());
+    fd.append('machine', $('#machine').val());
+    fd.append('mould', $('#mould').val());
+    fd.append('product', $('#product').val());
+    fd.append('batch', $('#batch').val());
+
+    fd.append('batches_made', $('#batches_made').val());
+    fd.append('finished_qty', finished);
+    fd.append('rejected_qty', rejected);
+    fd.append('operator_name', $('#operator_name').val());
+    fd.append('remarks', $('#remarks').val());
+
+    $.ajax({
+      url: "/production/add-production-entry",
+      type: "POST",
+      data: fd,
+      processData: false,
+      contentType: false,
+
+      beforeSend: () => swal({ text: "Saving...", buttons: false }),
+
+      success: function (res) {
+        if (res.response.n === 1) {
+          swal(res.response.msg).then(() => {
+            window.location.href = "/production/production-list";
+          });
+        } else {
+          swal(res.response.msg);
+        }
+      }
+    });
+  }
 </script>
 {% endblock %}

@@ -10,10 +10,15 @@ from Sales.models import *
 # Create your models here.
 class RawInventory(TrackingModel):
     raw_material = models.ForeignKey(RawMaterial, on_delete=models.PROTECT)
-    quantity = models.FloatField()
+    quantity = models.DecimalField(
+        max_digits=15,
+        decimal_places=3
+    )
+
 class ProductionInventory(TrackingModel):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.FloatField()
+
 class RawMaterialStockLedger(TrackingModel):
     raw_material = models.ForeignKey(RawMaterial, on_delete=models.PROTECT)
 

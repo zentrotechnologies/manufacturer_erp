@@ -47,7 +47,7 @@ def login(request):
             # messages.error(request, login_response['response']['msg'])
             return HttpResponse(json.dumps(login_response),content_type='application/json')
     else:
-        return render(request, 'Authentication/auth_login_basic.html')
+        return render(request, 'Authentication/auth_login_basic.html',)
 
 def logout(request):
     if request.method == 'POST':

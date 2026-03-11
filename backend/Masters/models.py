@@ -22,6 +22,12 @@ class RawMaterial(TrackingModel):
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT)
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     gst_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    weight_per_piece = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True
+    )
     
     def __str__(self):
         return self.name

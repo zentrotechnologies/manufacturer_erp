@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Batch List{% endblock %}
+
+{% block layout %}
+
+<div class="card">
+
+    <div class="card-header d-flex justify-content-between">
+        <h5>Batch List</h5>
+
+        <a href="/masters/add-batch" class="btn btn-primary">
+            Add Batch
+        </a>
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered" id="batch_table">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Batch Name</th>
+                    <th>Product</th>
+                    <th>Batch Weight</th>
+                    <th>Output Qty</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block page_js %}
+{{ block.super }}
+
+<script>
+
+function loadBatch(){
+
+    $.ajax({
+
+        url: hosturl + "/api/Production/batch_list",
+        type: "POST",
+        headers: { "Authorization": "Bearer {{token}}" },
+
+        success:function(res){
+
+            let html='';
+
+            res.data.forEach(b=>{
+
+                html+=`
+                <tr>
+                    <td>${b.id}</td>
+                    <td>${b.batch_name}</td>
+                    <td>${b.product_name}</td>
+                    <td>${b.batch_weight_kg}</td>
+                    <td>${b.standard_output_qty}</td>
+
+                    <td>
+                        <a href="/batch/edit-batch/${b.id}" class="btn btn-sm btn-warning">
+                            Edit
+                        </a>
+
+                        <button class="btn btn-sm btn-danger"
+                        onclick="deleteBatch(${b.id})">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+
+            $('#batch_table tbody').html(html);
+
+        }
+
+    });
+
+}
+
+function deleteBatch(id){
+
+    swal({
+        title: "Delete Batch?",
+        icon: "warning",
+        buttons: true
+    })
+
+    .then((ok)=>{
+
+        if(!ok) return;
+
+        let fd = new FormData();
+        fd.append('id',id);
+        fd.append('csrfmiddlewaretoken','{{csrf_token}}');
+
+        $.ajax({
+
+            url:"/batch/delete-batch",
+            type:"POST",
+            data:fd,
+            processData:false,
+            contentType:false,
+
+            success:function(res){
+
+                swal(res.response.msg);
+
+                if(res.response.n==1){
+                    loadBatch();
+                }
+
+            }
+
+        });
+
+    });
+
+}
+
+loadBatch();
+
+</script>
+
+{% endblock %}

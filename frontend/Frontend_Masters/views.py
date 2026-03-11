@@ -376,8 +376,142 @@ def edit_product(request, id):
     
 
 
+def batch(request):
+    token = request.session.get('token', False)
+
+    if token:
+        return render(
+            request,
+            'Masters/batch/batch-list.html'
+        )
+
+    messages.error(request, 'Session expired. Please log in again.')
+    return redirect('Frontend_User:login')
 
 
+def add_batch(request):
+
+    token = request.session.get('token', False)
+
+    if token:
+
+        headers = {'Authorization': f'Bearer {token}'}
+
+        if request.method == 'POST':
+
+            data = request.POST.copy()
+
+            r = requests.post(
+                hosturl + "/api/Production/add_new_batch",
+                data=data,
+                headers=headers
+            )
+
+            return HttpResponse(
+                json.dumps(r.json()),
+                content_type='application/json'
+            )
+
+        # GET → Load Product dropdown
+        p = requests.post(
+            get_product_list_url,
+            data={},
+            headers=headers
+        )
+        rm = requests.post(get_raw_material_list_url, data={}, headers=headers)
+
+        return render(
+            request,
+            'Masters/batch/add-batch.html',
+            {
+                'products': p.json().get('data', []),
+                'raw_materials': rm.json().get('data', []),
 
 
+            }
+        )
 
+    messages.error(request, 'Session expired. Please log in again.')
+    return redirect('Frontend_User:login')
+
+def edit_batch(request, id):
+
+    token = request.session.get('token', False)
+
+    if token:
+
+        headers = {'Authorization': f'Bearer {token}'}
+
+        if request.method == 'POST':
+
+            data = request.POST.copy()
+
+            r = requests.post(
+                hosturl + "/api/Production/update_batch",
+                data=data,
+                headers=headers
+            )
+
+            return HttpResponse(
+                json.dumps(r.json()),
+                content_type='application/json'
+            )
+
+        # ---------- GET (Edit Page) ----------
+
+        r = requests.post(
+            hosturl + "/api/Production/get_batch_by_id",
+            data={'id': id},
+            headers=headers
+        )
+
+        response = r.json()
+
+        p = requests.post(
+            get_product_list_url,
+            data={},
+            headers=headers
+        )
+
+        return render(
+            request,
+            'Masters/batch/edit-batch.html',
+            {
+                'batch': response.get('data'),
+                'products': p.json().get('data', [])
+            }
+        )
+
+    messages.error(request, 'Session expired. Please log in again.')
+    return redirect('Frontend_User:login')
+
+def delete_batch(request):
+
+    token = request.session.get('token', False)
+
+    if token:
+
+        headers = {'Authorization': f'Bearer {token}'}
+
+        r = requests.post(
+            hosturl + "/api/Production/delete_batch",
+            data=request.POST,
+            headers=headers
+        )
+
+        return HttpResponse(
+            json.dumps(r.json()),
+            content_type='application/json'
+        )
+
+    return HttpResponse(
+        json.dumps({
+            "data": [],
+            "response": {
+                "n": 0,
+                "msg": "Session expired",
+                "status": "error"
+            }
+        }),
+        content_type='application/json'
+    )

@@ -21,7 +21,9 @@ def add_production_entry(request):
 
         if request.method == 'POST':
             data = request.POST.copy()
-
+            data['finished_qty'] = data.get('finished_qty', 0)
+            data['rejected_qty'] = data.get('rejected_qty', 0)
+            data['batches_made'] = data.get('batches_made', 0)
             r = requests.post(
                 hosturl + "/api/Production/create_production_entry",
                 data=data,
@@ -48,6 +50,7 @@ def add_production_entry(request):
         ma=requests.post(get_machine_list_url,data={},headers=headers)
         mo=requests.post(get_mould_list_url,data={},headers=headers)
         p=requests.post(get_product_list_url,data={},headers=headers)
+        b = requests.post(hosturl + "/api/Production/batch_list", headers=headers)
 
         return render(
             request,
@@ -55,7 +58,9 @@ def add_production_entry(request):
             {
                 'machines': ma.json()['data'],
                 'moulds':  mo.json()['data'],
-                'products':  p.json()['data']
+                'products':  p.json()['data'],
+                'batches': b.json()['data']
+
             }
         )
 
@@ -87,7 +92,7 @@ def view_production(request, id):
             request,
             'Production/view-production.html',
             {
-                'entry': response['data']['entry'],
+                'entry': response['data'],
                 'consumptions': response['data']['consumptions']
             }
         )
@@ -97,15 +102,34 @@ def view_production(request, id):
 
 
 def daily_production_report(request):
-    token = request.session.get('token', False)
-    if token:
-        return render(
-            request,
-            'Production/daily-production-report.html'
+
+    token = request.session.get('token')
+
+    if not token:
+        messages.error(request, 'Session expired')
+        return redirect('Frontend_User:login')
+
+    headers = {'Authorization': f'Bearer {token}'}
+
+    report_data = []
+
+    if request.method == "POST":
+
+        date = request.POST.get("date")
+
+        r = requests.post(
+            hosturl + "/api/Production/daily_production_report",
+            data={"date": date},
+            headers=headers
         )
 
-    messages.error(request, 'Session expired')
-    return redirect('Frontend_User:login')
+        report_data = r.json().get("data", [])
+
+    return render(
+        request,
+        'Production/daily-production-report.html',
+        {"report": report_data}
+    )
 
 
 
