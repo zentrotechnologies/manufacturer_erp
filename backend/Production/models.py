@@ -115,7 +115,7 @@ class ProductionEntry(TrackingModel):
     rejected_qty = models.PositiveIntegerField(default=0)
 
     remarks = models.TextField(blank=True, null=True)
-
+    production_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     class Meta:
         ordering = ['-production_date', '-id']
         indexes = [

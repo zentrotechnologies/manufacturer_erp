@@ -7,16 +7,16 @@
         <h5>Daily Production Report</h5>
         <div class="d-flex">
             <div class="mx-1">
-            <input type="date" id="report_date" class="form-control w-100" >
+                <input type="date" id="report_date" class="form-control w-100">
 
             </div>
             <div class="mx-1">
                 <button class="btn btn-primary mb-3" onclick="loadReport()">Generate</button>
             </div>
             <div class="mx-1">
-                 <button class="btn btn-success mb-3" onclick="exportExcel()">
-                Export to Excel
-            </button>
+                <button class="btn btn-success mb-3" onclick="exportExcel()">
+                    Export to Excel
+                </button>
             </div>
         </div>
     </div>
@@ -71,42 +71,111 @@
 
             success: function (res) {
                 swal.close();
-                let html = '';
+
                 if (res.response.n == 1) {
 
+                    let html = '';
 
                     res.data.forEach(r => {
+
                         html += `
-          <div class="border p-3 mb-3">
-            <b>${r.product}</b> | Machine: ${r.machine} | Shift: ${r.shift}<br>
-            Produced: ${r.produced_qty}, Rejected: ${r.rejected_qty},
-            Net: ${r.net_qty}<br>
-            Cost / Piece: ₹${r.cost_per_piece}
-            <table class="table table-sm mt-2">
-              <thead>
-                <tr>
-                  <th>Raw Material</th>
-                  <th>Qty</th>
-                  <th>Rate</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${r.materials.map(m => `
-                  <tr>
-                    <td>${m.raw_material}</td>
-                    <td>${m.qty}</td>
-                    <td>${m.rate}</td>
-                    <td>${m.value}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
+<div class="border p-3 mb-4">
+
+  <h6>${r.product} | Machine: ${r.machine} | Shift: ${r.shift}</h6>
+
+  <div class="row text-center">
+
+    <div class="col">
+      <b>Produced</b><br>${r.finished_qty}
+    </div>
+
+    <div class="col">
+      <b>Rejected</b><br>${r.rejected_qty}
+    </div>
+
+    <div class="col">
+      <b>Accepted</b><br>${r.accepted_qty}
+    </div>
+
+    <div class="col">
+      <b>Rate</b><br>₹${r.production_rate}
+    </div>
+
+    <div class="col">
+      <b>Production Value</b><br>₹${r.production_value}
+    </div>
+
+    <div class="col">
+      <b>Material Cost</b><br>₹${r.total_material_cost}
+    </div>
+
+    <div class="col">
+      <b>Cons %</b><br>${r.consumption_percent}%
+    </div>
+
+    <div class="col">
+      <b>P/L</b><br>
+      <span style="color:${r.profit_loss < 0 ? 'red' : 'green'}">
+        ₹${r.profit_loss}
+      </span>
+    </div>
+
+  </div>
+
+  <table class="table table-sm mt-3">
+    <thead>
+      <tr>
+        <th>Raw Material</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      ${r.materials.map(m => `
+        <tr>
+          <td>${m.raw_material}</td>
+          <td>${m.qty}</td>
+          <td>${m.rate}</td>
+          <td>${m.value}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+</div>
+`;
                     });
 
+                    // 🔥 TOTAL CALCULATION
+                    let totalProduction = 0;
+                    let totalCost = 0;
+
+                    res.data.forEach(r => {
+                        totalProduction += r.production_value;
+                        totalCost += r.total_material_cost;
+                    });
+
+                    let totalPL = totalProduction - totalCost;
+
+                    // 🔥 APPEND SUMMARY
+                    html += `
+<div class="card p-3 mt-3 text-center">
+
+  <h5>Total Production: ₹${totalProduction.toFixed(2)}</h5>
+  <h5>Total Cost: ₹${totalCost.toFixed(2)}</h5>
+
+  <h4 style="color:${totalPL < 0 ? 'red' : 'green'}">
+    Profit/Loss: ₹${totalPL.toFixed(2)}
+  </h4>
+
+</div>
+`;
+
+                    // ✅ FINAL RENDER (ONLY ONCE)
                     $('#report_container').html(html);
+
                 } else {
                     swal(res.response.msg);
                 }
@@ -114,7 +183,7 @@
         });
     }
 
-  document.getElementById("report_date").value =    new Date().toISOString().split('T')[0];
+    document.getElementById("report_date").value = new Date().toISOString().split('T')[0];
     loadReport()
 
 </script>

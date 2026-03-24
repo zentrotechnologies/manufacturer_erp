@@ -15,3 +15,11 @@ class BatchSerializer(serializers.ModelSerializer):
             'batch_weight_kg',
             'standard_output_qty'
         ]
+        
+        
+class BatchRawMaterialSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = BatchRawMaterial
+        fields = '__all__'

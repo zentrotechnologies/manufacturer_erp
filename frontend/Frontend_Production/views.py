@@ -87,7 +87,7 @@ def view_production(request, id):
             headers=headers
         )
         response = r.json()
-
+        print("response",response)
         return render(
             request,
             'Production/view-production.html',

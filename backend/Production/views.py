@@ -12,7 +12,7 @@ from inventory.models import *
 from User.common import *
 from openpyxl import Workbook
 from django.http import HttpResponse
-
+import json
 
 def get_current_wip(product, machine):
 
@@ -93,6 +93,7 @@ class CreateProductionEntryAPI(GenericAPIView):
             batches_made=batches_made,
             finished_qty=finished_qty,
             rejected_qty=rejected_qty,
+            production_rate=data.get('production_rate', 0),
             remarks=data.get('remarks')
         )
 
@@ -118,11 +119,18 @@ class CreateProductionEntryAPI(GenericAPIView):
 
             available = Decimal(last_stock.balance_quantity) if last_stock else Decimal('0')
 
+            # if available < qty_needed:
+            #     raise ValidationError(
+            #         f"Insufficient stock for {rm.raw_material.name}"
+            #     )
             if available < qty_needed:
-                raise ValidationError(
-                    f"Insufficient stock for {rm.raw_material.name}"
-                )
-
+                return Response({
+                    "response": {
+                        "n": 0,
+                        "msg": f"Insufficient stock for {rm.raw_material.name}",
+                        "status": "error"
+                    }
+                })
             rate = rm.rate_per_kg
             value = qty_needed * rate
 
@@ -134,7 +142,11 @@ class CreateProductionEntryAPI(GenericAPIView):
                 balance_quantity=available - qty_needed,
                 remarks=f"Production Entry #{pe.id}"
             )
-
+            print("hi",                pe,
+                rm.raw_material,
+                qty_needed,
+                rate,
+                value)
             ProductionRawMaterialConsumption.objects.create(
                 production_entry=pe,
                 raw_material=rm.raw_material,
@@ -227,7 +239,13 @@ class GetProductionEntryByIdAPI(GenericAPIView):
                     "status": "error"
                 }
             })
+        total_material_cost = sum(
+            c.value_consumed for c in pe.consumptions.all()
+        )
 
+        production_value = pe.accepted_qty * getattr(pe, 'production_rate', 0)
+
+        profit_loss = production_value - total_material_cost
         return Response({
             "data": {
                 "production_date": pe.production_date,
@@ -235,18 +253,26 @@ class GetProductionEntryByIdAPI(GenericAPIView):
                 "machine": pe.machine.machine_code,
                 "mould": pe.mould.mould_code,
                 "product": pe.product.name,
-                "batch": pe.batch.batch_name,
-                "batches_made": pe.batches_made,
+
                 "finished_qty": pe.finished_qty,
                 "rejected_qty": pe.rejected_qty,
                 "accepted_qty": pe.accepted_qty,
+
                 "variance_percent": round(pe.variance_percent, 2),
+
+                # 🔥 NEW
+                "production_rate": float(getattr(pe, 'production_rate', 0)),
+                "production_value": float(production_value),
+                "total_material_cost": float(total_material_cost),
+                "profit_loss": float(profit_loss),
+
                 "consumptions": [
                     {
-                        "raw_material": c.raw_material.name,
-                        "quantity": c.quantity_consumed,
-                        "rate": c.rate_per_unit,
-                        "value": c.value_consumed
+                        "raw_material_name": c.raw_material.name,
+                        "raw_material_unit": "KG",
+                        "quantity_consumed": float(c.quantity_consumed),
+                        "rate_per_unit": float(c.rate_per_unit),
+                        "value_consumed": float(c.value_consumed)
                     }
                     for c in pe.consumptions.all()
                 ]
@@ -285,11 +311,23 @@ class DailyProductionReportAPI(GenericAPIView):
 
             consumptions = pe.consumptions.all()
 
-            total_material_cost = sum(
-                c.value_consumed for c in consumptions
-            )
+            total_material_cost = sum(c.value_consumed for c in consumptions)
 
             accepted_qty = pe.accepted_qty
+            rejected_qty = pe.rejected_qty
+
+            # 🔥 NEW CALCULATIONS
+            production_value = accepted_qty * pe.production_rate
+            rejection_value = rejected_qty * pe.production_rate
+
+            total_cost = total_material_cost
+
+            consumption_percent = (
+                (total_cost / production_value) * 100
+                if production_value > 0 else 0
+            )
+
+            profit_loss = production_value - total_cost
 
             cost_per_piece = (
                 total_material_cost / accepted_qty
@@ -302,24 +340,30 @@ class DailyProductionReportAPI(GenericAPIView):
                 "machine": pe.machine.machine_code,
                 "product": pe.product.name,
                 "batch": pe.batch.batch_name,
-                "batches_made": pe.batches_made,
+
                 "finished_qty": pe.finished_qty,
-                "rejected_qty": pe.rejected_qty,
+                "rejected_qty": rejected_qty,
                 "accepted_qty": accepted_qty,
-                "variance_percent": round(pe.variance_percent, 2),
-                "running_cavity": pe.mould.running_cavity,
-                "total_cavity": pe.mould.total_cavity,
+
+                # 🔥 NEW FIELDS
+                "production_rate": float(pe.production_rate),
+                "production_value": float(round(production_value, 2)),
+                "rejection_value": float(round(rejection_value, 2)),
+                "total_material_cost": float(round(total_material_cost, 2)),
+                "consumption_percent": float(round(consumption_percent, 2)),
+                "profit_loss": float(round(profit_loss, 2)),
+
+                "cost_per_piece": float(round(cost_per_piece, 2)),
+
                 "materials": [
                     {
                         "raw_material": c.raw_material.name,
-                        "quantity": float(c.quantity_consumed),
+                        "qty": float(c.quantity_consumed),
                         "rate": float(c.rate_per_unit),
                         "value": float(c.value_consumed)
                     }
                     for c in consumptions
-                ],
-                "total_material_cost": float(round(total_material_cost, 2)),
-                "cost_per_piece": float(round(cost_per_piece, 2))
+                ]
             })
 
         return Response({
@@ -469,7 +513,6 @@ class batch_list_pagination_api(GenericAPIView):
 
         qs = BatchMaster.objects.filter(
             isActive=True,
-            isDeleted=False
         ).select_related('product').order_by('-id')
 
         if search:
@@ -507,11 +550,73 @@ class add_new_batch(GenericAPIView):
                 }
             })
 
+        import json
+
+        try:
+            raw_materials = json.loads(request.data.get('raw_materials', '[]'))
+        except Exception:
+            return Response({
+                "data": [],
+                "response": {
+                    "n": 0,
+                    "msg": "Invalid raw materials data",
+                    "status": "error"
+                }
+            })
+
+        if not raw_materials:
+            return Response({
+                "data": [],
+                "response": {
+                    "n": 0,
+                    "msg": "At least one raw material is required",
+                    "status": "error"
+                }
+            })
+
+        seen = set()
+
+        for material in raw_materials:
+
+            if not material.get('raw_material') or not material.get('quantity_kg_per_batch') or not material.get('rate_per_kg'):
+                return Response({
+                    "data": [],
+                    "response": {
+                        "n": 0,
+                        "msg": "All raw material fields are required",
+                        "status": "error"
+                    }
+                })
+
+            if material['raw_material'] in seen:
+                return Response({
+                    "data": [],
+                    "response": {
+                        "n": 0,
+                        "msg": "Duplicate raw materials not allowed",
+                        "status": "error"
+                    }
+                })
+
+            seen.add(material['raw_material'])
+
         serializer = BatchSerializer(data=data)
 
         if serializer.is_valid():
 
-            serializer.save(isActive=True)
+            batch = serializer.save(isActive=True)
+
+            rm_objects = [
+                BatchRawMaterial(
+                    batch=batch,
+                    raw_material_id=material['raw_material'],
+                    quantity_kg_per_batch=material['quantity_kg_per_batch'],
+                    rate_per_kg=material['rate_per_kg']
+                )
+                for material in raw_materials
+            ]
+
+            BatchRawMaterial.objects.bulk_create(rm_objects)
 
             return Response({
                 "data": serializer.data,
@@ -532,7 +637,6 @@ class add_new_batch(GenericAPIView):
                 "status": "error"
             }
         })
-        
 class batch_list(GenericAPIView):
 
     serializer_class = BatchSerializer
@@ -541,7 +645,6 @@ class batch_list(GenericAPIView):
 
         batches = BatchMaster.objects.filter(
             isActive=True,
-            isDeleted=False
         )
 
         serializer = self.get_serializer(batches, many=True)
@@ -564,7 +667,6 @@ class get_batch_by_id(GenericAPIView):
         batch = BatchMaster.objects.filter(
             id=batch_id,
             isActive=True,
-            isDeleted=False
         ).first()
 
         if not batch:
@@ -577,9 +679,14 @@ class get_batch_by_id(GenericAPIView):
                     "status": "error"
                 }
             })
-
+        newdata=BatchSerializer(batch).data
+        raw_material=BatchRawMaterial.objects.filter(batch=batch)
+        raw_serializer=BatchRawMaterialSerializer(raw_material,many=True)
+        newdata['raw_materials']=raw_serializer.data
+        
+        
         return Response({
-            "data": BatchSerializer(batch).data,
+            "data": newdata,
             "response": {
                 "n": 1,
                 "msg": "Batch fetched successfully",
@@ -597,7 +704,6 @@ class update_batch(GenericAPIView):
         batch = BatchMaster.objects.filter(
             id=batch_id,
             isActive=True,
-            isDeleted=False
         ).first()
 
         if not batch:
@@ -610,15 +716,43 @@ class update_batch(GenericAPIView):
                 }
             })
 
-        serializer = BatchSerializer(
-            batch,
-            data=request.data,
-            partial=True
-        )
+        import json
+
+        try:
+            raw_materials = json.loads(request.data.get('raw_materials', '[]'))
+        except:
+            return Response({
+                "data": [],
+                "response": {
+                    "n": 0,
+                    "msg": "Invalid raw materials",
+                    "status": "error"
+                }
+            })
+
+        serializer = BatchSerializer(batch, data=request.data, partial=True)
 
         if serializer.is_valid():
 
-            serializer.save()
+            batch = serializer.save()
+
+            # 🔥 DELETE OLD RAW MATERIALS
+            BatchRawMaterial.objects.filter(batch=batch).delete()
+
+            # 🔥 ADD NEW RAW MATERIALS
+            rm_objects = []
+
+            for material in raw_materials:
+                rm_objects.append(
+                    BatchRawMaterial(
+                        batch=batch,
+                        raw_material_id=material['raw_material'],
+                        quantity_kg_per_batch=material['quantity_kg_per_batch'],
+                        rate_per_kg=material['rate_per_kg']
+                    )
+                )
+
+            BatchRawMaterial.objects.bulk_create(rm_objects)
 
             return Response({
                 "data": serializer.data,
@@ -640,6 +774,7 @@ class update_batch(GenericAPIView):
             }
         })
         
+             
 class delete_batch(GenericAPIView):
 
     def post(self, request):
@@ -663,7 +798,6 @@ class delete_batch(GenericAPIView):
             })
 
         batch.isActive = False
-        batch.isDeleted = True
         batch.save()
 
         return Response({

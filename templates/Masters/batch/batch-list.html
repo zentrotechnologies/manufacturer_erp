@@ -63,12 +63,12 @@ function loadBatch(){
                 <tr>
                     <td>${b.id}</td>
                     <td>${b.batch_name}</td>
-                    <td>${b.product_name}</td>
+                    <td>${b.product}</td>
                     <td>${b.batch_weight_kg}</td>
                     <td>${b.standard_output_qty}</td>
 
                     <td>
-                        <a href="/batch/edit-batch/${b.id}" class="btn btn-sm btn-warning">
+                        <a href="/masters/edit-batch/${b.id}" class="btn btn-sm btn-warning">
                             Edit
                         </a>
 
@@ -107,7 +107,7 @@ function deleteBatch(id){
 
         $.ajax({
 
-            url:"/batch/delete-batch",
+            url:"/masters/delete-batch",
             type:"POST",
             data:fd,
             processData:false,

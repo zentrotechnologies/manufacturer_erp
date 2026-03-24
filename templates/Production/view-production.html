@@ -41,38 +41,69 @@
 
     <!-- PRODUCT SUMMARY -->
     <div class="row mb-3">
-      <div class="col-md-4">
-        <p class="mb-1"><b>Product</b></p>
-        <p>{{ entry.product }}</p>
-      </div>
 
-      <div class="col-md-2">
-        <p class="mb-1"><b>Planned Qty</b></p>
-        <p>{{ entry.planned_quantity }} NOS</p>
-      </div>
-
-      <div class="col-md-2">
-        <p class="mb-1 text-success"><b>Produced</b></p>
-        <p class="text-success fw-bold">
-          {{ entry.produced_quantity }} NOS
+      <div class="col-md-3">
+        <p class="mb-1"><b>Finished Qty</b></p>
+        <p class="fw-bold text-success">
+          {{ entry.finished_qty }} NOS
         </p>
       </div>
 
-      <div class="col-md-2">
-        <p class="mb-1 text-danger"><b>Rejected</b></p>
-        <p class="text-danger fw-bold">
-          {{ entry.rejected_quantity }} NOS
+      <div class="col-md-3">
+        <p class="mb-1"><b>Rejected Qty</b></p>
+        <p class="fw-bold text-danger">
+          {{ entry.rejected_qty }} NOS
         </p>
       </div>
 
-      <div class="col-md-2">
-        <p class="mb-1"><b>Accepted</b></p>
+      <div class="col-md-3">
+        <p class="mb-1"><b>Accepted Qty</b></p>
         <p class="fw-bold">
-          {{ entry.produced_quantity|floatformat:2|add:"-"|add:entry.rejected_quantity }} NOS
+          {{ entry.accepted_qty }} NOS
         </p>
       </div>
-    </div>
 
+      <div class="col-md-3">
+        <p class="mb-1"><b>Variance %</b></p>
+        <p>
+          {{ entry.variance_percent }} %
+        </p>
+      </div>
+
+    </div>
+    <hr>
+
+    <h6 class="fw-bold">Cost Summary</h6>
+
+    <div class="row text-center">
+
+      <div class="col-md-3">
+        <p><b>Production Rate</b></p>
+        <p>₹ {{ entry.production_rate|default:"0" }}</p>
+      </div>
+
+      <div class="col-md-3">
+        <p><b>Production Value</b></p>
+        <p class="text-success fw-bold">
+          ₹ {{ entry.production_value|default:"0" }}
+        </p>
+      </div>
+
+      <div class="col-md-3">
+        <p><b>Material Cost</b></p>
+        <p class="fw-bold">
+          ₹ {{ entry.total_material_cost|default:"0" }}
+        </p>
+      </div>
+
+      <div class="col-md-3">
+        <p><b>Profit / Loss</b></p>
+        <p class="fw-bold" style="color: {% if entry.profit_loss < 0 %}red{% else %}green{% endif %}">
+          ₹ {{ entry.profit_loss|default:"0" }}
+        </p>
+      </div>
+
+    </div>
     <!-- REMARKS -->
     {% if entry.remarks %}
     <div class="alert alert-light border">
@@ -101,19 +132,16 @@
           {% for c in consumptions %}
           <tr>
             <td>{{ forloop.counter }}</td>
-            <td class="text-start">
-              <b>{{ c.raw_material_name }}</b>
-            </td>
+
+            <td>{{ c.raw_material_name }}</td>
+
             <td>{{ c.raw_material_unit }}</td>
-            <td>
-              {{ c.quantity_consumed|floatformat:2 }}
-            </td>
-            <td>
-              ₹ {{ c.rate_per_unit }}
-            </td>
-            <td class="fw-bold">
-              ₹ {{ c.value_consumed|floatformat:2 }}
-            </td>
+
+            <td>{{ c.quantity_consumed }}</td>
+
+            <td>₹ {{ c.rate_per_unit }}</td>
+
+            <td>₹ {{ c.value_consumed }}</td>
           </tr>
           {% empty %}
           <tr>
@@ -126,8 +154,7 @@
 
     <!-- FOOTER ACTIONS -->
     <div class="d-flex justify-content-end mt-4">
-      <a href="/production/production-list"
-         class="btn btn-secondary">
+      <a href="/production/production-list" class="btn btn-secondary">
         Back
       </a>
     </div>

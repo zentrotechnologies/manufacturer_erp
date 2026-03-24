@@ -97,7 +97,7 @@
 
             </button>
 
-            <a href="/batch" class="btn btn-danger">
+            <a href="/masters/batch" class="btn btn-danger">
                 Cancel
             </a>
 
@@ -116,7 +116,7 @@
 
 <script>
 
-let rawMaterials = {{ raw_materials|safe }};
+let rawMaterials = JSON.parse('{{ raw_materials|escapejs }}');
 
 
 function addRow(){
@@ -218,7 +218,7 @@ function saveBatch(){
 
     $.ajax({
 
-        url:"/batch/add-batch",
+        url:"/masters/add-batch",
 
         type:"POST",
 
@@ -241,7 +241,7 @@ function saveBatch(){
 
                 .then(()=>{
 
-                    window.location.href="/batch";
+                    window.location.href="/masters/batch";
 
                 });
 

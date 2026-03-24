@@ -199,6 +199,104 @@ class dashboard_summary_api(GenericAPIView):
 
 
 
+# adjust imports as per your project
+
+class DashboardSummaryAPI(GenericAPIView):
+
+    def get(self, request):
+
+        today = date.today()
+
+        # =========================
+        # TODAY PRODUCTION
+        # =========================
+        today_qs = ProductionEntry.objects.filter(
+            production_date=today,
+            isActive=True
+        )
+
+        today_production = sum(p.accepted_qty for p in today_qs)
+
+        today_production_detail = [
+            {
+                "machine": p.machine.machine_code,
+                "product": p.product.name,
+                "qty": p.accepted_qty
+            }
+            for p in today_qs
+        ]
+
+        # =========================
+        # LOW STOCK
+        # =========================
+        low_stock_items = []
+
+        materials = RawMaterial.objects.all()
+
+        for rm in materials:
+            last = RawMaterialStockLedger.objects.filter(
+                raw_material=rm
+            ).order_by('-id').first()
+
+            balance = last.balance_quantity if last else 0
+
+            if balance < 50:   # 🔥 threshold (you can make dynamic)
+                low_stock_items.append({
+                    "name": rm.name,
+                    "qty": float(balance),
+                    "unit": "KG"
+                })
+
+        # =========================
+        # PENDING PURCHASE (DUMMY for now)
+        # =========================
+        pending_purchase = 0
+        pending_purchase_list = []
+
+        # =========================
+        # SALES (DUMMY for now)
+        # =========================
+        today_sales = 0
+        monthly_sales = 0
+        today_sales_qty = 0
+
+        # =========================
+        # RECENT ACTIVITY
+        # =========================
+        recent_activity = []
+
+        last_entries = ProductionEntry.objects.filter(
+            isActive=True
+        ).order_by('-id')[:5]
+
+        for p in last_entries:
+            recent_activity.append(
+                f"{p.product.name} produced {p.accepted_qty} on {p.production_date}"
+            )
+
+        return Response({
+            "data": {
+                "today_production": today_production,
+                "today_production_detail": today_production_detail,
+
+                "low_stock_count": len(low_stock_items),
+                "low_stock_items": low_stock_items,
+
+                "pending_purchase": pending_purchase,
+                "pending_purchase_list": pending_purchase_list,
+
+                "today_sales": today_sales,
+                "monthly_sales": monthly_sales,
+                "today_sales_qty": today_sales_qty,
+
+                "recent_activity": recent_activity
+            },
+            "response": {
+                "n": 1,
+                "msg": "Dashboard data",
+                "status": "success"
+            }
+        })
 
 
 

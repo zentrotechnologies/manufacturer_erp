@@ -60,8 +60,6 @@ class Product(TrackingModel):
     def __str__(self):
         return self.name
     
-    
-    
 class ProductConfiguration(TrackingModel):
     product = models.ForeignKey(
         Product,

@@ -9,6 +9,7 @@ import datetime
 from datetime import date
 from helpers.validations import hosturl
 # from project.views import statuscheck
+from django.utils.safestring import mark_safe
 
 
 
@@ -425,7 +426,7 @@ def add_batch(request):
             'Masters/batch/add-batch.html',
             {
                 'products': p.json().get('data', []),
-                'raw_materials': rm.json().get('data', []),
+                'raw_materials': mark_safe(json.dumps(rm.json().get('data', []))),
 
 
             }
@@ -472,15 +473,19 @@ def edit_batch(request, id):
             data={},
             headers=headers
         )
+        rm = requests.post(get_raw_material_list_url, data={}, headers=headers)
 
         return render(
             request,
             'Masters/batch/edit-batch.html',
             {
                 'batch': response.get('data'),
-                'products': p.json().get('data', [])
+                'products': p.json().get('data', []),
+                'raw_materials': mark_safe(json.dumps(rm.json().get('data', []))),
+                'existing_rm': mark_safe(json.dumps(response.get('data', {}).get('raw_materials', [])))
             }
         )
+
 
     messages.error(request, 'Session expired. Please log in again.')
     return redirect('Frontend_User:login')
